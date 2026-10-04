@@ -138,7 +138,7 @@ export default function ChallengeCard({ kind, slot, loggedIn, defaultLanguage, o
               className={`mt-auto self-start rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                 challenge.solved
                   ? "border border-line-strong text-zinc-200 hover:bg-surface-2"
-                  : "bg-accent text-zinc-950 hover:bg-accent-hover"
+                  : "bg-accent text-white hover:bg-accent-hover"
               }`}
             >
               {challenge.solved ? "Review solution" : "Continue"}
@@ -169,7 +169,7 @@ export default function ChallengeCard({ kind, slot, loggedIn, defaultLanguage, o
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="mt-auto self-start rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-zinc-950 transition-colors hover:bg-accent-hover"
+              className="mt-auto self-start rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
             >
               Start {kind} challenge
             </button>

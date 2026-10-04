@@ -5,24 +5,24 @@
 /* Palette shared with the auth pages. */
 @theme {
   --color-foreground: #fafafa;
-  --color-accent-ink: #f2b544;
+  --color-accent-ink: #b03e43;
   --color-success-surface: #12281c;
   --color-success-line: #1e4a33;
-  --color-warning-surface: #251d10;
-  --color-warning-line: #594218;
+  --color-warning-surface: #241416;
+  --color-warning-line: #522226;
   --color-danger-surface: #2a1313;
   --color-danger-line: #4a1f1f;
-  --color-canvas: #0d0e12;
-  --color-canvas-2: #0a0b0e;
-  --color-surface: #14161b;
-  --color-surface-2: #1a1d23;
-  --color-line: #1f2229;
-  --color-line-strong: #2b2f38;
-  --color-accent: #f2b544;
-  --color-accent-hover: #e5a83b;
+  --color-canvas: #0a0a0c;
+  --color-canvas-2: #050507;
+  --color-surface: #121215;
+  --color-surface-2: #18181c;
+  --color-line: #222228;
+  --color-line-strong: #2f3038;
+  --color-accent: #b03e43;
+  --color-accent-hover: #9c353a;
   --color-easy: #4ade80;
-  --color-medium: #f2b544;
-  --color-hard: #f87171;
+  --color-medium: #ea580c;
+  --color-hard: #b03e43;
 }
 
 :root { color-scheme: dark; }
@@ -36,14 +36,14 @@
   --color-line: #dfe3e9;
   --color-line-strong: #c4cbd5;
   --color-foreground: #171923;
-  --color-accent-ink: #8a5500;
+  --color-accent-ink: #b03e43;
   --color-easy: #16763b;
-  --color-medium: #8a5500;
-  --color-hard: #bd2635;
+  --color-medium: #c2410c;
+  --color-hard: #b03e43;
   --color-success-surface: #e8f5ed;
   --color-success-line: #b5d9c2;
-  --color-warning-surface: #fff4d9;
-  --color-warning-line: #e7ce94;
+  --color-warning-surface: #fef2f2;
+  --color-warning-line: #fecaca;
   --color-danger-surface: #fcebed;
   --color-danger-line: #edbcc3;
   /* Existing neutral utilities use these shared palette values throughout the app. */
@@ -64,7 +64,7 @@
   --color-emerald-400: #087652;
   --color-violet-300: #7041b4;
   --color-violet-400: #7949bd;
-  --color-amber-300: #8a5500;
+  --color-amber-300: #b03e43;
   --color-blue-400: #1d4ed8;
   --color-sky-300: #075985;
 }
@@ -126,8 +126,8 @@ body {
   background: rgb(239 68 68 / 0.35);
 }
 .debug-current-line {
-  background: rgb(242 181 68 / 0.13);
-  box-shadow: inset 2px 0 0 #f2b544;
+  background: rgb(176 62 67 / 0.16);
+  box-shadow: inset 2px 0 0 #b03e43;
 }
 .debug-exception-line {
   background: rgb(248 113 113 / 0.14);
@@ -142,7 +142,7 @@ body {
   left: 2px;
   top: 50%;
   transform: translateY(-50%);
-  border-left: 7px solid #f2b544;
+  border-left: 7px solid #b03e43;
   border-top: 5px solid transparent;
   border-bottom: 5px solid transparent;
 }

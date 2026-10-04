@@ -9,7 +9,7 @@ const tones = {
   },
   accent: {
     icon: "border-accent/40 bg-accent/10 text-accent-ink",
-    confirm: "bg-accent text-zinc-950 hover:bg-accent-hover",
+    confirm: "bg-accent text-white hover:bg-accent-hover",
   },
 };
 

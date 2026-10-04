@@ -6,7 +6,7 @@ export default function CodePreviewCard() {
         <div className="flex items-center gap-2.5">
           <span className="font-mono text-xs text-zinc-500">#142</span>
           <span className="text-sm font-semibold text-zinc-100">Cart total is wrong</span>
-          <span className="rounded bg-accent px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-zinc-950">
+          <span className="rounded bg-accent px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-white">
             MEDIUM
           </span>
         </div>

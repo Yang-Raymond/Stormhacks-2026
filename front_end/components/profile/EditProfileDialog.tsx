@@ -175,7 +175,7 @@ function EditProfileForm({
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-zinc-950 transition-colors hover:bg-accent-hover disabled:opacity-50"
+          className="rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
         >
           {saving ? "Saving..." : "Save changes"}
         </button>

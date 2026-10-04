@@ -35,7 +35,7 @@ export function PrimaryButton({
   return (
     <Link
       href={href}
-      className={`${btnBase} bg-accent font-semibold text-zinc-950 hover:bg-accent-hover shadow-sm ${className}`}
+      className={`${btnBase} bg-accent font-semibold text-white hover:bg-accent-hover shadow-sm ${className}`}
     >
       {children}
     </Link>

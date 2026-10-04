@@ -49,8 +49,8 @@ const defineTheme: BeforeMount = (monaco) => {
       "editor.background": "#ffffff",
       "editorGutter.background": "#ffffff",
       "editor.lineHighlightBackground": "#f0f2f5",
-      "editor.selectionBackground": "#f2b54450",
-      "editorCursor.foreground": "#8a5500",
+      "editor.selectionBackground": "#b03e4330",
+      "editorCursor.foreground": "#b03e43",
     },
   });
   monaco.editor.defineTheme("ladybug", {
@@ -58,22 +58,22 @@ const defineTheme: BeforeMount = (monaco) => {
     inherit: true,
     rules: [],
     colors: {
-      "editor.background": "#14161b",
-      "editorGutter.background": "#14161b",
-      "editor.lineHighlightBackground": "#1a1d2380",
+      "editor.background": "#121215",
+      "editorGutter.background": "#121215",
+      "editor.lineHighlightBackground": "#18181c80",
       "editor.lineHighlightBorder": "#00000000",
       "editorLineNumber.foreground": "#4b5060",
       "editorLineNumber.activeForeground": "#c8ccd4",
-      "editor.selectionBackground": "#f2b54430",
-      "editor.inactiveSelectionBackground": "#f2b5441a",
-      "editorIndentGuide.background1": "#23262e",
+      "editor.selectionBackground": "#b03e4335",
+      "editor.inactiveSelectionBackground": "#b03e4318",
+      "editorIndentGuide.background1": "#222228",
       "editorIndentGuide.activeBackground1": "#3a3f4b",
-      "editorCursor.foreground": "#f2b544",
-      "editorWidget.background": "#1a1d23",
-      "editorWidget.border": "#2b2f38",
-      "editorHoverWidget.background": "#1a1d23",
-      "editorHoverWidget.border": "#2b2f38",
-      "scrollbarSlider.background": "#2b2f3880",
+      "editorCursor.foreground": "#b03e43",
+      "editorWidget.background": "#18181c",
+      "editorWidget.border": "#2f3038",
+      "editorHoverWidget.background": "#18181c",
+      "editorHoverWidget.border": "#2f3038",
+      "scrollbarSlider.background": "#2f303880",
       "scrollbarSlider.hoverBackground": "#3a3f4b",
     },
   });
@@ -292,7 +292,7 @@ export default function CodeEditor(props: CodeEditorProps) {
             placeholder="Python expression, e.g. i == 3 (empty = always)"
             className="min-w-40 flex-1 rounded border border-line bg-canvas-2 px-2 py-1 font-mono text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-accent/60 focus:outline-none"
           />
-          <button type="submit" className="rounded bg-accent px-2.5 py-1 text-xs font-semibold text-zinc-950 hover:bg-accent-hover">
+          <button type="submit" className="rounded bg-accent px-2.5 py-1 text-xs font-semibold text-white hover:bg-accent-hover">
             Save
           </button>
           <button type="button" onClick={() => setConditionEditor(null)} className="rounded px-2 py-1 text-xs text-zinc-400 hover:text-zinc-100">

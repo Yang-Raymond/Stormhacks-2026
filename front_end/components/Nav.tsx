@@ -52,7 +52,7 @@ export default function Nav() {
   return (
     <nav className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 sm:gap-6 border-b border-line bg-canvas/90 px-4 backdrop-blur sm:px-6">
       <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-accent font-mono text-xs font-bold text-zinc-950">
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-accent font-mono text-xs font-bold text-white">
           &gt;_
         </span>
         LadyBug
@@ -88,7 +88,7 @@ export default function Nav() {
             <Link href="/login" className="text-sm text-zinc-400 hover:text-zinc-100">Log in</Link>
             <Link
               href="/register"
-              className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-zinc-950 transition-colors hover:bg-accent-hover"
+              className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
             >
               Debug now
             </Link>
