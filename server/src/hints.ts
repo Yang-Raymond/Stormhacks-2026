@@ -61,7 +61,7 @@ function leaksReference(hint: string, referenceCode: string) {
 /** A single nudge (not the answer) about the student's code, from Gemini. */
 export async function generateHint(input: HintInput): Promise<string> {
   const hint = (await generateText(prompt(input))).trim();
-  if (!hint) throw new HttpError(502, "The model returned an empty hint, please try again");
+  if (!hint) throw new HttpError(502, "The model returned an empty hint. Please try again.");
   if (leaksReference(hint, input.referenceCode)) {
     throw new HttpError(502, "Couldn't produce a hint that doesn't give the answer away. Please try again.");
   }

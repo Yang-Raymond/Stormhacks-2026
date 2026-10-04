@@ -2,18 +2,18 @@ export default function FeatureList() {
   const features = [
     {
       step: "01",
-      title: "Paste or import code",
-      description: "From any AI assistant, a file, or a pull request.",
+      title: "Real AI bugs",
+      description: "Practice on realistic code with off-by-ones, race conditions, and tricky edge cases.",
     },
     {
       step: "02",
-      title: "See every issue, line by line",
-      description: "Ranked by severity with a plain explanation.",
+      title: "In-browser time-travel debugger",
+      description: "Set breakpoints, step forward and back, inspect the call stack, and watch live variables.",
     },
     {
       step: "03",
-      title: "Apply fixes you trust",
-      description: "Review diffs and rerun tests before you ship.",
+      title: "Hidden test validation",
+      description: "Run and submit your fixes against hidden test suites across 6 programming languages.",
     },
   ];
 

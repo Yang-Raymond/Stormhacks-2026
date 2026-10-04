@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import OnboardingGuard from "@/components/OnboardingGuard";
 
 export const metadata: Metadata = {
-  title: "Profile · LadyBug",
+  title: "Profile",
   description: "View and manage your LadyBug profile and statistics",
 };
 

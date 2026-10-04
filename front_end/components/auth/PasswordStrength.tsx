@@ -21,7 +21,7 @@ export function calculatePasswordStrength(pass: string): {
   } else if (score === 3) {
     label = "Good";
   } else if (score === 4) {
-    label = "Strong password";
+    label = "Strong";
   }
 
   return { score, label };

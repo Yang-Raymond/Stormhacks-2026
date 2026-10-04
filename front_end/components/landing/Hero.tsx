@@ -16,7 +16,7 @@ export default function Hero() {
 
           {/* Description */}
           <p className="mt-6 max-w-xl text-base leading-relaxed text-zinc-400 sm:text-lg">
-            AI tools write code faster than ever, and the bugs come with it. LadyBug gives you realistic broken code, failing tests and a real debugger. You find the bug, fix it and explain it. No answers handed to you.
+            AI tools write code faster than ever, and the bugs come with it. LadyBug gives you realistic broken code, failing tests, and a real debugger. You find the bug, step through the execution, and fix it. No answers handed to you.
           </p>
 
           {/* CTA Buttons */}
@@ -24,14 +24,11 @@ export default function Hero() {
             <PrimaryButton href="/problems" className="h-11 px-5 text-sm">
               Solve your first bug
             </PrimaryButton>
-            <SecondaryButton href="#how-it-works" className="h-11 px-5 text-sm">
-              See how it works
-            </SecondaryButton>
           </div>
 
           {/* Tagline below buttons */}
           <p className="mt-6 text-xs text-zinc-500 font-medium">
-            Free · Python, JavaScript, TypeScript, Java, C, C++
+            Python, JavaScript, TypeScript, Java, C, C++
           </p>
         </div>
 

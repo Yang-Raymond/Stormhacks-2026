@@ -330,7 +330,7 @@ export default function ProblemPage() {
     <Card>
       <CardTabs>
         <CardTab active={tab === "testcase"} onClick={() => setTab("testcase")} icon={<FlaskIcon className="size-3.5" />}>
-          Testcase
+          Test cases
         </CardTab>
         <CardTab active={tab === "result"} onClick={() => setTab("result")} icon={<TerminalIcon className="size-3.5" />}>
           Result
