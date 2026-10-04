@@ -16,7 +16,13 @@ export default function Nav() {
       .catch(() => setUser(null));
   }, [pathname]);
 
-  if (pathname === "/login" || pathname === "/register" || pathname === "/signup") {
+  if (
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/signup" ||
+    pathname === "/onboarding" ||
+    pathname === "/auth/callback"
+  ) {
     return null;
   }
 

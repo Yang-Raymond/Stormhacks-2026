@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, type User } from "@/lib/api";
+import { getAuthErrorMessage } from "@/lib/authErrors";
 import Divider from "./Divider";
 import Field from "./Field";
 import OAuthButtons from "./OAuthButtons";
@@ -18,22 +19,7 @@ export default function LoginForm() {
   const [formError, setFormError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const getUrlErrorMessage = (code: string | null) => {
-    switch (code) {
-      case "account_not_found":
-        return "No account found with this profile. Please create an account first.";
-      case "oauth_failed":
-        return "Third-party sign in was cancelled or failed. Please try again.";
-      case "email_unverified":
-        return "Your third-party email is not verified. Please verify it before signing in.";
-      case "not_configured":
-        return "Third-party authentication is not configured yet.";
-      default:
-        return code ? "An authentication error occurred. Please try again." : "";
-    }
-  };
-
-  const activeError = formError || getUrlErrorMessage(urlError);
+  const activeError = formError || getAuthErrorMessage(urlError);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -46,14 +32,14 @@ export default function LoginForm() {
     setFieldErrors({});
 
     try {
-      await api("/auth/login", {
+      const { user } = await api<{ user: User }>("/auth/login", {
         body: {
           email,
           password,
           remember,
         },
       });
-      router.push("/problems");
+      router.push(user.onboarded ? "/problems" : "/onboarding");
     } catch (err) {
       if (err instanceof ApiError && err.issues) {
         const mapped: Record<string, string> = {};

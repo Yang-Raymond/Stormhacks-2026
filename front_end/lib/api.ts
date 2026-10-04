@@ -2,7 +2,17 @@ export type User = {
   id: string;
   email: string;
   fullName?: string | null;
-  debugLanguage?: string | null;
+  role?: string | null;
+  debugLanguages: string[];
+  avatarUrl?: string | null;
+  onboarded: boolean;
+};
+
+export type AuthMethod = "email" | "github" | "google";
+
+export type MeResponse = {
+  user: User | null;
+  authMethod?: AuthMethod;
 };
 
 export type Difficulty = "easy" | "medium" | "hard";
