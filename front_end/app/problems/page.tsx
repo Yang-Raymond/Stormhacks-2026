@@ -45,6 +45,7 @@ export default function ProblemsPage() {
   const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | "all">("all");
   const [languageFilter, setLanguageFilter] = useState<Language | "all">("all");
   const [status, setStatus] = useState<Status>("all");
+  const [preferred, setPreferred] = useState<Language>("python");
 
   useEffect(() => {
     api<{ problems: ProblemSummary[] }>("/problems")
@@ -59,6 +60,7 @@ export default function ProblemsPage() {
         const pref = res.user?.debugLanguages?.[0];
         if (pref && LANGUAGES.some((l) => l.id === pref)) {
           setLanguageFilter(pref as Language);
+          setPreferred(pref as Language);
         }
       })
       .catch(() => {});
@@ -76,20 +78,30 @@ export default function ProblemsPage() {
     }
   }
 
+  // Each language version of a problem is its own row sharing the title; list each problem once and open
+  // the filtered language, else the user's preferred one, else whichever exists.
+  const list = useMemo(() => {
+    const groups = new Map<string, ProblemSummary[]>();
+    for (const p of problems ?? []) groups.set(p.title, [...(groups.get(p.title) ?? []), p]);
+    const want = languageFilter === "all" ? preferred : languageFilter;
+    return [...groups.values()]
+      .filter((g) => languageFilter === "all" || g.some((p) => p.language === languageFilter))
+      .map((g) => {
+        const pick = g.find((p) => p.language === want) ?? g.find((p) => p.language === "python") ?? g[0];
+        return { ...pick, solved: g.some((p) => p.solved) };
+      });
+  }, [problems, languageFilter, preferred]);
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (problems ?? []).filter(
+    return list.filter(
       (p) =>
         (!q || p.title.toLowerCase().includes(q)) &&
-        (languageFilter === "all" || p.language === languageFilter) &&
         (difficultyFilter === "all" || p.difficulty === difficultyFilter) &&
         (status === "all" || (status === "solved") === p.solved),
     );
-  }, [problems, query, languageFilter, difficultyFilter, status]);
+  }, [list, query, difficultyFilter, status]);
 
-  const list = useMemo(() => {
-    return (problems ?? []).filter((p) => languageFilter === "all" || p.language === languageFilter);
-  }, [problems, languageFilter]);
   const solvedCount = list.filter((p) => p.solved).length;
 
   return (
