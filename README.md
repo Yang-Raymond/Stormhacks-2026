@@ -41,6 +41,7 @@ To use Tiger Data cloud instead of the local db, set `DATABASE_URL` in `.env` (w
 
 ## Sponsor integrations
 
+<<<<<<< Updated upstream
 - **Tiger Data**: activity events live in a TimescaleDB hypertable with a continuous aggregate behind the streaks and heatmap.
 - **.tech**: the domain for the deployed app.
 
@@ -74,3 +75,8 @@ Generated problems are only saved if the reference fix passes every test **and**
 ## Sandbox notes
 
 The runner applies rlimits (CPU, memory, file size, open files), a 5s timeout, an empty environment, and kills the whole process group after each run. Real isolation comes from the container settings in `docker-compose.yml`: no internet (internal network), read-only filesystem, non-root user, all capabilities dropped, memory/CPU/PID caps. Keep those settings wherever the runner is deployed. It's good enough for a hackathon, but it isn't hardened for hostile public traffic (for that, use gVisor or a per-run container).
+=======
+- **Tiger Data**: every run, submit, debug session, hint and challenge start is an event in a TimescaleDB hypertable; a real-time continuous aggregate (`daily_activity`) powers the streaks and heatmap. See [server/migrations/013_activity_events.sql](server/migrations/013_activity_events.sql) and [server/src/activity.ts](server/src/activity.ts).
+- **.tech**: the domain the app is deployed on.
+-**Google cloud studio**: We are using google's gemini API to generate fresh new questions daily and once a week for users
+>>>>>>> Stashed changes
