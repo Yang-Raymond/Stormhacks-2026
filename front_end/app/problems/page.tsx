@@ -7,7 +7,8 @@ import ChallengesSection from "@/components/challenges/ChallengesSection";
 import DifficultyBadge from "@/components/ui/DifficultyBadge";
 import GenerationProgress from "@/components/ui/GenerationProgress";
 import { CheckIcon, ChevronRightIcon, SearchIcon, SparklesIcon } from "@/components/ui/icons";
-import { api, type Difficulty, type ProblemSummary } from "@/lib/api";
+import { api, type Difficulty, type MeResponse, type ProblemSummary } from "@/lib/api";
+import { LANGUAGES, type Language, languageInfo } from "@/lib/languages";
 
 const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard"];
 const STATUSES = ["all", "unsolved", "solved"] as const;
@@ -42,6 +43,7 @@ export default function ProblemsPage() {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | "all">("all");
+  const [languageFilter, setLanguageFilter] = useState<Language | "all">("all");
   const [status, setStatus] = useState<Status>("all");
 
   useEffect(() => {
@@ -51,6 +53,15 @@ export default function ProblemsPage() {
         setError(e.message);
         setProblems([]);
       });
+
+    api<MeResponse>("/auth/me")
+      .then((res) => {
+        const pref = res.user?.debugLanguages?.[0];
+        if (pref && LANGUAGES.some((l) => l.id === pref)) {
+          setLanguageFilter(pref as Language);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   async function generate() {
@@ -70,12 +81,15 @@ export default function ProblemsPage() {
     return (problems ?? []).filter(
       (p) =>
         (!q || p.title.toLowerCase().includes(q)) &&
+        (languageFilter === "all" || p.language === languageFilter) &&
         (difficultyFilter === "all" || p.difficulty === difficultyFilter) &&
         (status === "all" || (status === "solved") === p.solved),
     );
-  }, [problems, query, difficultyFilter, status]);
+  }, [problems, query, languageFilter, difficultyFilter, status]);
 
-  const list = problems ?? [];
+  const list = useMemo(() => {
+    return (problems ?? []).filter((p) => languageFilter === "all" || p.language === languageFilter);
+  }, [problems, languageFilter]);
   const solvedCount = list.filter((p) => p.solved).length;
 
   return (
@@ -93,7 +107,7 @@ export default function ProblemsPage() {
 
       <div className="mt-12 flex flex-wrap items-baseline justify-between gap-2 border-t border-line pt-8">
         <h2 className="text-lg font-semibold text-white">Practice</h2>
-        <p className="text-xs text-zinc-500">Python problems you can come back to any time.</p>
+        <p className="text-xs text-zinc-500">Problems in every language, come back any time.</p>
       </div>
 
       <section aria-label="Practice progress" className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -134,7 +148,27 @@ export default function ProblemsPage() {
               className="w-full rounded-lg border border-line bg-surface py-2 pl-9 pr-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs text-zinc-300">
+              <label htmlFor="language-filter" className="text-zinc-500">
+                Language:
+              </label>
+              <select
+                id="language-filter"
+                value={languageFilter}
+                onChange={(e) => setLanguageFilter(e.target.value as Language | "all")}
+                className="cursor-pointer bg-transparent text-xs text-zinc-200 focus:outline-none"
+              >
+                <option value="all" className="bg-surface text-zinc-200">
+                  All
+                </option>
+                {LANGUAGES.map((l) => (
+                  <option key={l.id} value={l.id} className="bg-surface text-zinc-200">
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <Segmented
               label="Difficulty"
               options={["all", ...DIFFICULTIES] as const}
@@ -160,9 +194,14 @@ export default function ProblemsPage() {
                 <SolvedMark solved={p.solved} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-zinc-100 group-hover:text-white">{p.title}</p>
-                  <p className="mt-0.5 font-mono text-xs text-zinc-500">
-                    #{p.id} · {relativeTime(p.created_at)}
-                  </p>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <span className="font-mono text-xs text-zinc-500">
+                      #{p.id} · {relativeTime(p.created_at)}
+                    </span>
+                    <span className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">
+                      {languageInfo(p.language).label}
+                    </span>
+                  </div>
                 </div>
                 <DifficultyBadge difficulty={p.difficulty} />
                 <ChevronRightIcon className="size-4 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-accent" />
@@ -187,6 +226,7 @@ export default function ProblemsPage() {
                 <button
                   onClick={() => {
                     setQuery("");
+                    setLanguageFilter("all");
                     setDifficultyFilter("all");
                     setStatus("all");
                   }}
