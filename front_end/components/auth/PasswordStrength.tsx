@@ -27,6 +27,21 @@ export function calculatePasswordStrength(pass: string): {
   return { score, label };
 }
 
+function getScoreColor(score: number): string {
+  switch (score) {
+    case 1:
+      return "bg-red-500";
+    case 2:
+      return "bg-orange-500";
+    case 3:
+      return "bg-yellow-500";
+    case 4:
+      return "bg-green-500";
+    default:
+      return "bg-[#232730]";
+  }
+}
+
 export default function PasswordStrength({ password }: { password: string }) {
   const { score, label } = calculatePasswordStrength(password);
 
@@ -41,11 +56,7 @@ export default function PasswordStrength({ password }: { password: string }) {
             <div
               key={step}
               className={`h-1 rounded-full transition-colors duration-200 ${
-                isActive
-                  ? score >= 4
-                    ? "bg-emerald-400"
-                    : "bg-[#f2b544]"
-                  : "bg-[#232730]"
+                isActive ? getScoreColor(score) : "bg-[#232730]"
               }`}
             />
           );

@@ -7,16 +7,12 @@ interface OAuthButtonsProps {
   layout: "stacked" | "inline";
   mode: "login" | "register";
   remember?: boolean;
-  language?: string;
-  termsAccepted?: boolean;
 }
 
 export default function OAuthButtons({
   layout,
   mode,
   remember = false,
-  language,
-  termsAccepted = true,
 }: OAuthButtonsProps) {
   const [providers, setProviders] = useState<{ github: boolean; google: boolean }>({
     github: true,
@@ -36,18 +32,10 @@ export default function OAuthButtons({
       from: mode,
       remember: remember ? "1" : "0",
     });
-    if (language) params.set("language", language);
     return `/api/auth/oauth/${provider}/start?${params.toString()}`;
   };
 
-  const isSignupDisabled = mode === "register" && !termsAccepted;
-
   const handleOAuthClick = (e: React.MouseEvent<HTMLAnchorElement>, provider: "github" | "google") => {
-    if (isSignupDisabled) {
-      e.preventDefault();
-      alert("Please agree to the Terms of Service and Privacy Policy first.");
-      return;
-    }
     if (!providers[provider]) {
       e.preventDefault();
       alert(`${provider === "github" ? "GitHub" : "Google"} OAuth is not configured yet in .env.`);
@@ -55,17 +43,12 @@ export default function OAuthButtons({
     }
   };
 
-  const codeBracketIcon = (
-    <svg className="w-4 h-4 text-zinc-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l-4 3 4 3m8-6l4 3-4 3" />
-    </svg>
+  const githubIcon = (
+    <img src="/GitHub_Invertocat_Black.svg" alt="GitHub Logo" className="w-4 h-4 invert" />
   );
 
-  const googlePlusIcon = (
-    <svg className="w-4 h-4 text-zinc-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <circle cx="12" cy="12" r="9" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v8m-4-4h8" />
-    </svg>
+  const googleIcon = (
+    <img src="/Google_Favicon_2025.svg" alt="Google Logo" className="w-4 h-4" />
   );
 
   const buttonClass =
@@ -77,19 +60,19 @@ export default function OAuthButtons({
         <a
           href={buildUrl("github")}
           onClick={(e) => handleOAuthClick(e, "github")}
-          aria-disabled={isSignupDisabled || !providers.github}
-          className={`${buttonClass} ${isSignupDisabled ? "opacity-60 cursor-not-allowed" : ""}`}
+          aria-disabled={!providers.github}
+          className={buttonClass}
         >
-          {codeBracketIcon}
+          {githubIcon}
           <span>GitHub</span>
         </a>
         <a
           href={buildUrl("google")}
           onClick={(e) => handleOAuthClick(e, "google")}
-          aria-disabled={isSignupDisabled || !providers.google}
-          className={`${buttonClass} ${isSignupDisabled ? "opacity-60 cursor-not-allowed" : ""}`}
+          aria-disabled={!providers.google}
+          className={buttonClass}
         >
-          {googlePlusIcon}
+          {googleIcon}
           <span>Google</span>
         </a>
       </div>
@@ -104,7 +87,7 @@ export default function OAuthButtons({
         aria-disabled={!providers.github}
         className={buttonClass}
       >
-        {codeBracketIcon}
+        {githubIcon}
         <span>Continue with GitHub</span>
       </a>
       <a
@@ -113,7 +96,7 @@ export default function OAuthButtons({
         aria-disabled={!providers.google}
         className={buttonClass}
       >
-        {googlePlusIcon}
+        {googleIcon}
         <span>Continue with Google</span>
       </a>
     </div>
