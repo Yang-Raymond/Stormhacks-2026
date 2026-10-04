@@ -6,6 +6,7 @@ export type User = {
   debugLanguages: string[];
   avatarUrl?: string | null;
   onboarded: boolean;
+  createdAt?: string;
 };
 
 export type AuthMethod = "email" | "github" | "google";
@@ -158,3 +159,42 @@ export type Insights =
       hardest: (Rate & { problem_id: number; title: string; difficulty: string; language: string })[];
       byHour: { hour: number; events: number }[];
     };
+
+export type ProfileStats = {
+  solved: number;
+  total: number;
+  medianSolveSeconds: number | null;
+  noHintRate: number | null;
+};
+
+export type DifficultyStat = {
+  difficulty: Difficulty;
+  solved: number;
+  total: number;
+};
+
+export type LanguageStat = {
+  language: string;
+  solved: number;
+};
+
+export type RecentSubmission = {
+  id: string;
+  problemId: string;
+  title: string;
+  difficulty: Difficulty;
+  language: string;
+  passed: boolean;
+  passedCount: number;
+  totalCount: number;
+  elapsedSeconds: number | null;
+  createdAt: string;
+};
+
+export type ProfileResponse = {
+  user: User & { createdAt?: string };
+  stats: ProfileStats;
+  byDifficulty: DifficultyStat[];
+  languages: LanguageStat[];
+  recent: RecentSubmission[];
+};

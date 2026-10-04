@@ -100,7 +100,7 @@ export default function SignupForm() {
         />
 
         <Field
-          label="Work email"
+          label="Email"
           name="email"
           type="email"
           autoComplete="email"

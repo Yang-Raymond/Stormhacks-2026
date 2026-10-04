@@ -158,6 +158,14 @@ problemsRouter.post("/generate", requireAuth, generationLimiter, async (req, res
 
 problemsRouter.get("/:id", async (req, res) => {
   const p = await loadProblem(req);
+  if (req.session.userId) {
+    pool
+      .query(
+        "INSERT INTO problem_attempts (user_id, problem_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        [req.session.userId, p.id],
+      )
+      .catch((err) => console.warn("attempt not recorded", err));
+  }
   const { rows } = await pool.query<{ saved_code: string }>(
     "SELECT code AS saved_code FROM drafts WHERE problem_id = $1 AND user_id = $2",
     [p.id, req.session.userId ?? null],
