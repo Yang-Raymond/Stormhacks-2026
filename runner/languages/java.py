@@ -5,6 +5,8 @@ from sandbox import MB, Limits
 from . import Program
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# JdiTracer.java and Json.java, compiled here when the image is built (see the Dockerfile).
+TRACER_CLASSES = os.path.join(HERE, "jdi")
 with open(os.path.join(HERE, "Json.java"), encoding="utf-8") as f:
     JSON_HELPER = f.read()
 
@@ -25,6 +27,8 @@ JVM_FLAGS = ["-XX:+UseSerialGC", "-XX:TieredStopAtLevel=1", "-XX:-UsePerfData", 
 # The JVM reserves a large address space up front, so memory is bounded by -Xmx and the container instead.
 COMPILE_LIMITS = Limits(cpu=30, wall=20, fsize=16 * MB, nofile=512)
 RUN_LIMITS = Limits(cpu=15, wall=10, fsize=4 * MB, nofile=256)
+# Two JVMs (tracer and target) talking over JDWP for every step.
+TRACE_LIMITS = Limits(cpu=20, wall=12, fsize=8 * MB, nofile=256)
 
 MAIN = """import java.io.*;
 import java.util.*;
@@ -57,8 +61,13 @@ public class Main {{
 """
 
 
-def build(code, entry_point, signature):
+def build(code, entry_point, signature, trace=False):
     args = ", ".join(f"{CONVERT[p['type']]}(args.get({i}))" for i, p in enumerate(signature["params"]))
+    if trace:
+        # The tracer launches Main itself under JDI.
+        run, run_limits = ["java", *JVM_FLAGS, "-Xmx128m", "-cp", TRACER_CLASSES, "JdiTracer", entry_point], TRACE_LIMITS
+    else:
+        run, run_limits = ["java", *JVM_FLAGS, "-Xmx256m", "-Xss64m", "-cp", ".", "Main"], RUN_LIMITS
     return Program(
         files={"Main.java": MAIN.format(entry=entry_point, args=args), "Json.java": JSON_HELPER, "Solution.java": code},
         compile=[
@@ -67,11 +76,16 @@ def build(code, entry_point, signature):
             "-J-Xmx512m",
             "-encoding", "UTF-8",
             "-nowarn",
+            *(["-g"] if trace else []),  # local variable names, for the variables view
             "-Xmaxerrs", "20",
             "-d", ".",
             "Solution.java", "Main.java", "Json.java",
         ],
         compile_limits=COMPILE_LIMITS,
-        run=["java", *JVM_FLAGS, "-Xmx256m", "-Xss64m", "-cp", ".", "Main"],
-        run_limits=RUN_LIMITS,
+        run=run,
+        run_limits=run_limits,
     )
+
+
+def trace(code, entry_point, signature):
+    return build(code, entry_point, signature, trace=True)

@@ -39,14 +39,14 @@ export type EvalResult = {
 };
 export type BreakpointCondition = { line: number; expr: string };
 
-async function callRunner<T>(path: string, body: unknown): Promise<T> {
+async function callRunner<T>(path: string, body: unknown, timeoutMs = 15_000): Promise<T> {
   let res: Response;
   try {
     res = await fetch(new URL(path, config.RUNNER_URL), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (err) {
     console.error("runner unreachable", err);
@@ -70,6 +70,9 @@ export function runTests(
   return callRunner("/run", { code, entry_point: entryPoint, tests, language, signature: signature ?? undefined });
 }
 
+/** Compiling with debug info and stepping under gdb/JDI takes longer than a test run. */
+const TRACE_TIMEOUT_MS = 30_000;
+
 /** Records every executed line of one call so the client can step through it like a debugger. */
 export function traceCode(
   code: string,
@@ -79,7 +82,11 @@ export function traceCode(
   language: Language = "python",
   signature?: Signature | null,
 ): Promise<TraceResult> {
-  return callRunner("/trace", { code, entry_point: entryPoint, args, conditions, language, signature: signature ?? undefined });
+  return callRunner(
+    "/trace",
+    { code, entry_point: entryPoint, args, conditions, language, signature: signature ?? undefined },
+    TRACE_TIMEOUT_MS,
+  );
 }
 
 /** Replays the same call up to `step` and evaluates expressions in the given stack frame (0 = innermost). */
@@ -100,7 +107,7 @@ export function evalAtStep(
     eval: evalSpec,
     language,
     signature: signature ?? undefined,
-  });
+  }, TRACE_TIMEOUT_MS);
 }
 
 export function allPassed(run: RunResult, total: number) {

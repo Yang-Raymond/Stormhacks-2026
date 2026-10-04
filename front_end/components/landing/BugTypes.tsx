@@ -19,12 +19,12 @@ export default function BugTypes() {
         {/* Header */}
         <Eyebrow>PROBLEMS</Eyebrow>
         <div className="mt-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
-          <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+          <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
             Practice by bug type
           </h2>
           <Link
             href="/problems"
-            className="flex items-center gap-1.5 text-sm font-semibold text-accent transition-colors hover:text-accent-hover"
+            className="flex items-center gap-1.5 text-sm font-semibold text-accent-ink transition-colors hover:text-accent-ink"
           >
             <span>Browse all problems</span>
             <span aria-hidden="true">→</span>
@@ -37,9 +37,9 @@ export default function BugTypes() {
             <Link
               key={category}
               href="/problems"
-              className="group flex flex-col justify-center rounded-xl border border-line-strong/80 bg-[#14161b] p-6 transition-all hover:border-zinc-600 hover:bg-[#181b22]"
+              className="group flex flex-col justify-center rounded-xl border border-line-strong/80 bg-surface p-6 transition-all hover:border-zinc-600 hover:bg-surface-2"
             >
-              <h3 className="text-sm font-bold text-zinc-100 transition-colors group-hover:text-accent sm:text-[15px]">
+              <h3 className="text-sm font-bold text-zinc-100 transition-colors group-hover:text-accent-ink sm:text-[15px]">
                 {category}
               </h3>
             </Link>

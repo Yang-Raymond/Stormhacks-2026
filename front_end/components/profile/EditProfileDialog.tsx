@@ -76,13 +76,13 @@ function EditProfileForm({
   return (
     <form onSubmit={handleSubmit} aria-labelledby={titleId}>
       <div className="flex items-center justify-between border-b border-line px-6 py-4">
-        <h2 id={titleId} className="text-base font-semibold text-white">
+        <h2 id={titleId} className="text-base font-semibold text-foreground">
           Edit profile
         </h2>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-surface-2 hover:text-white"
+          className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-surface-2 hover:text-foreground"
         >
           <XIcon className="size-4" />
         </button>
@@ -109,7 +109,7 @@ function EditProfileForm({
             onChange={(e) => setFullName(e.target.value)}
             maxLength={100}
             required
-            className="mt-1.5 w-full rounded-lg border border-line-strong bg-canvas px-3.5 py-2 text-sm text-white placeholder-zinc-500 focus:border-accent focus:outline-none"
+            className="mt-1.5 w-full rounded-lg border border-line-strong bg-canvas px-3.5 py-2 text-sm text-foreground placeholder-zinc-500 focus:border-accent focus:outline-none"
           />
           {fieldErrors.fullName && (
             <p className="mt-1 text-xs text-red-400">{fieldErrors.fullName}</p>
@@ -127,10 +127,10 @@ function EditProfileForm({
             id="edit-role"
             value={role}
             onChange={(e) => setRole(e.target.value as Role)}
-            className="mt-1.5 w-full rounded-lg border border-line-strong bg-canvas px-3.5 py-2 text-sm text-white focus:border-accent focus:outline-none"
+            className="mt-1.5 w-full rounded-lg border border-line-strong bg-canvas px-3.5 py-2 text-sm text-foreground focus:border-accent focus:outline-none"
           >
             {ROLES.map((r) => (
-              <option key={r} value={r} className="bg-surface text-white">
+              <option key={r} value={r} className="bg-surface text-foreground">
                 {r}
               </option>
             ))}
@@ -152,7 +152,7 @@ function EditProfileForm({
             value={language}
             onChange={(e) => setLanguage(e.target.value as Language)}
             required
-            className="mt-1.5 w-full rounded-lg border border-line-strong bg-canvas px-3.5 py-2 text-sm text-white focus:border-accent focus:outline-none"
+            className="mt-1.5 w-full rounded-lg border border-line-strong bg-canvas px-3.5 py-2 text-sm text-foreground focus:border-accent focus:outline-none"
           >
             {LANGUAGES.map((lang) => (
               <option key={lang.id} value={lang.id}>{lang.label}</option>

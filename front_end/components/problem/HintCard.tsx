@@ -14,9 +14,9 @@ export default function HintCard({ hint, onClose }: { hint: HintState; onClose: 
   return (
     <div className="mx-4 mt-4 rounded-lg border border-accent/30 bg-accent/5 p-3" role="status" aria-live="polite">
       <div className="flex items-start gap-2.5">
-        <LightbulbIcon className="mt-0.5 size-4 shrink-0 text-accent" />
+        <LightbulbIcon className="mt-0.5 size-4 shrink-0 text-accent-ink" />
         <div className="min-w-0 flex-1 text-sm">
-          <p className="text-xs font-semibold text-accent">Hint</p>
+          <p className="text-xs font-semibold text-accent-ink">Hint</p>
           {hint.status === "loading" ? (
             <div className="mt-1.5 space-y-1.5" aria-label="Thinking">
               <span className="block h-2.5 w-11/12 animate-pulse rounded bg-accent/15" />

@@ -67,7 +67,7 @@ export default function ChallengesSection() {
   return (
     <section aria-labelledby="challenges-heading" className="mt-8">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="challenges-heading" className="text-lg font-semibold text-white">Challenges</h2>
+        <h2 id="challenges-heading" className="text-lg font-semibold text-foreground">Challenges</h2>
         <p className="text-xs text-zinc-500">A fresh problem just for you, in the language of your choice.</p>
       </div>
       {error && (
@@ -101,7 +101,7 @@ export default function ChallengesSection() {
                 >
                   <CheckIcon className="size-4 shrink-0 text-easy" />
                   <span
-                    className={`w-14 shrink-0 font-mono text-[11px] uppercase ${c.kind === "weekly" ? "text-violet-300" : "text-accent"}`}
+                    className={`w-14 shrink-0 font-mono text-[11px] uppercase ${c.kind === "weekly" ? "text-violet-300" : "text-accent-ink"}`}
                   >
                     {c.kind}
                   </span>

@@ -13,7 +13,7 @@ PATH = "/usr/local/bin:/usr/bin:/bin"
 class Limits:
     cpu: int  # CPU seconds (all threads)
     wall: float  # wall-clock seconds
-    memory: int | None = None  # address space; None for runtimes that reserve huge virtual ranges (JVM, V8, Mono)
+    memory: int | None = None  # address space; None for runtimes that reserve huge virtual ranges (JVM, V8)
     fsize: int = 4 * MB  # largest file the process may write, which also caps redirected stdout
     nofile: int = 64
 

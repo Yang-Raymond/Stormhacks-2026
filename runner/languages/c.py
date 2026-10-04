@@ -4,7 +4,7 @@ array takes a trailing `int* returnSize`. Returning int[][] isn't supported in C
 """
 from sandbox import MB, Limits
 
-from . import Program, UnsupportedSignature
+from . import Program, UnsupportedSignature, gdb_program
 
 COMPILE_LIMITS = Limits(cpu=20, wall=15, fsize=64 * MB, nofile=128)
 RUN_LIMITS = Limits(cpu=5, wall=5, memory=512 * MB, fsize=4 * MB, nofile=32)
@@ -87,6 +87,7 @@ static char* lb__read_all(FILE* f) {
 
 MAIN = r"""
 int main(void) {{
+{setup}
     char nonce[128] = {{0}};
     if (!fgets(nonce, sizeof nonce, stdin)) return 1;
     nonce[strcspn(nonce, "\n")] = 0;
@@ -135,7 +136,7 @@ RETURNS = {
 }
 
 
-def build(code, entry_point, signature):
+def build(code, entry_point, signature, trace=False):
     returns = signature["returns"]
     if returns not in RETURNS:
         raise UnsupportedSignature(f"C solutions can't return {returns}")
@@ -151,11 +152,16 @@ def build(code, entry_point, signature):
     lines.append(f"{c_type} r = {entry_point}({', '.join(call)});")
     lines.append(f"cJSON* value = {to_json};")
     body = "\n".join("        " + line for line in lines)
-    source = f'{PRELUDE}#line 1 "solution.c"\n{code}\n#line 1 "driver.c"\n{HELPERS}{MAIN.format(body=body)}'
-    return Program(
-        files={"main.c": source},
-        compile=["gcc", "-std=gnu11", "-O1", "-fmax-errors=20", "main.c", "-o", "main", "-lcjson", "-lm"],
-        compile_limits=COMPILE_LIMITS,
-        run=["./main"],
-        run_limits=RUN_LIMITS,
-    )
+    # The tracer reads stdout's size at every step, so output must not sit in a buffer.
+    setup = "    setvbuf(stdout, NULL, _IONBF, 0);" if trace else ""
+    source = f'{PRELUDE}#line 1 "solution.c"\n{code}\n#line 1 "driver.c"\n{HELPERS}{MAIN.format(body=body, setup=setup)}'
+    files = {"main.c": source}
+    flags = ["-g", "-O0"] if trace else ["-O1"]
+    compile = ["gcc", "-std=gnu11", *flags, "-fmax-errors=20", "main.c", "-o", "main", "-lcjson", "-lm"]
+    if trace:
+        return gdb_program(files, compile, COMPILE_LIMITS, "solution.c", entry_point, cxx=False)
+    return Program(files=files, compile=compile, compile_limits=COMPILE_LIMITS, run=["./main"], run_limits=RUN_LIMITS)
+
+
+def trace(code, entry_point, signature):
+    return build(code, entry_point, signature, trace=True)

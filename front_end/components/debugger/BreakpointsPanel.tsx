@@ -35,7 +35,7 @@ export default function BreakpointsPanel({ dbg, lineText }: { dbg: Debugger; lin
           type="checkbox"
           checked={dbg.pauseOnExceptions}
           onChange={(e) => dbg.setPauseOnExceptions(e.target.checked)}
-          className="accent-[#f2b544]"
+          className="accent-accent"
         />
         Pause on exceptions
       </label>

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const languages = ["python", "javascript", "typescript", "java", "c", "cpp", "csharp"] as const;
+export const languages = ["python", "javascript", "typescript", "java", "c", "cpp"] as const;
 export type Language = (typeof languages)[number];
 export const languageSchema = z.enum(languages);
 export const preferredLanguagesSchema = z.array(languageSchema).length(1, "Select exactly one preferred language");
@@ -12,7 +12,6 @@ export const languageLabels: Record<Language, string> = {
   java: "Java",
   c: "C",
   cpp: "C++",
-  csharp: "C#",
 };
 
 /** Language-neutral types a problem signature may use; the runner maps them to each language (runner/languages). */
@@ -42,6 +41,4 @@ export const solutionShape: Record<Language, string> = {
   ].join(" "),
   cpp:
     "A class named `Solution` with a public method named entry_point (camelCase), LeetCode style: T[] -> vector<T>&, int[][] -> vector<vector<int>>&, string -> string. `#include <bits/stdc++.h>` and `using namespace std;` are already provided; no main.",
-  csharp:
-    "A `public class Solution` with a public instance method named entry_point (PascalCase). C# 7.3 (Mono): no records, no top-level statements, no switch expressions; `using System; using System.Collections.Generic; using System.Linq;` allowed. T[] -> T[], int[][] -> int[][].",
 };

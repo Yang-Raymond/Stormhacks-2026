@@ -5,8 +5,7 @@ export const LANGUAGES = [
   { id: "typescript", label: "TypeScript", monaco: "typescript" },
   { id: "java", label: "Java", monaco: "java" },
   { id: "c", label: "C", monaco: "c" },
-  { id: "cpp", label: "C++", monaco: "cpp" },
-  { id: "csharp", label: "C#", monaco: "csharp" },
+  { id: "cpp", label: "C++", monaco: "cpp" }
 ] as const;
 
 export type Language = (typeof LANGUAGES)[number]["id"];
@@ -16,7 +15,7 @@ export function languageInfo(id: string) {
 }
 
 /** Languages the runner can trace for the time-travel debugger; matches server/src/problems.ts. */
-export const DEBUGGABLE: ReadonlySet<string> = new Set(["python", "javascript", "typescript"]);
+export const DEBUGGABLE: ReadonlySet<string> = new Set(["python", "javascript", "typescript", "java", "c", "cpp"]);
 
 /** Read current ids and legacy display-name preferences; use the first supported selection. */
 export function preferredLanguage(names: readonly string[] = []): Language {

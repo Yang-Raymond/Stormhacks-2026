@@ -1,8 +1,17 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* Palette shared with the auth pages. */
 @theme {
+  --color-foreground: #fafafa;
+  --color-accent-ink: #f2b544;
+  --color-success-surface: #12281c;
+  --color-success-line: #1e4a33;
+  --color-warning-surface: #251d10;
+  --color-warning-line: #594218;
+  --color-danger-surface: #2a1313;
+  --color-danger-line: #4a1f1f;
   --color-canvas: #0d0e12;
   --color-canvas-2: #0a0b0e;
   --color-surface: #14161b;
@@ -16,6 +25,50 @@
   --color-hard: #f87171;
 }
 
+:root { color-scheme: dark; }
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-canvas: #f7f8fa;
+  --color-canvas-2: #eef0f4;
+  --color-surface: #ffffff;
+  --color-surface-2: #f0f2f5;
+  --color-line: #dfe3e9;
+  --color-line-strong: #c4cbd5;
+  --color-foreground: #171923;
+  --color-accent-ink: #8a5500;
+  --color-easy: #16763b;
+  --color-medium: #8a5500;
+  --color-hard: #bd2635;
+  --color-success-surface: #e8f5ed;
+  --color-success-line: #b5d9c2;
+  --color-warning-surface: #fff4d9;
+  --color-warning-line: #e7ce94;
+  --color-danger-surface: #fcebed;
+  --color-danger-line: #edbcc3;
+  /* Existing neutral utilities use these shared palette values throughout the app. */
+  --color-zinc-100: #242733;
+  --color-zinc-200: #303442;
+  --color-zinc-300: #434858;
+  --color-zinc-400: #555d6e;
+  --color-zinc-500: #636b7c;
+  --color-zinc-600: #737b8a;
+  --color-zinc-700: #c4cbd5;
+  --color-zinc-800: #e3e7ed;
+  --color-red-300: #a91d2e;
+  --color-red-400: #bd2635;
+  --color-red-950: #fbe4e8;
+  --color-red-900: #d68d99;
+  --color-red-800: #c87582;
+  --color-emerald-300: #096b4c;
+  --color-emerald-400: #087652;
+  --color-violet-300: #7041b4;
+  --color-violet-400: #7949bd;
+  --color-amber-300: #8a5500;
+  --color-blue-400: #1d4ed8;
+  --color-sky-300: #075985;
+}
+
 @theme inline {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
@@ -23,12 +76,12 @@
 
 body {
   background: var(--color-canvas);
-  color: #e4e4e7;
+  color: var(--color-zinc-100);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2b2f38 transparent;
+  scrollbar-color: var(--color-line-strong) transparent;
 }
 
 /* Problem statement: code inside fenced blocks shouldn't get the inline-code pill. */
@@ -64,7 +117,7 @@ body {
 }
 .bp-glyph-conditional::before {
   background: #ef4444;
-  box-shadow: inset 0 0 0 3px #ef4444, inset 0 0 0 5px #14161b;
+  box-shadow: inset 0 0 0 3px #ef4444, inset 0 0 0 5px var(--color-surface);
 }
 .bp-glyph-disabled::before {
   border: 1.5px solid #71717a;
@@ -94,7 +147,7 @@ body {
   border-bottom: 5px solid transparent;
 }
 .debug-inline-value {
-  color: #a1a1aa;
+  color: var(--color-zinc-400);
   font-style: italic;
   opacity: 0.85;
 }

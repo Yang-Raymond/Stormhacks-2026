@@ -202,7 +202,7 @@ export default function ProblemPage() {
         {error ? (
           <div className="text-center">
             <p className="text-red-400">{error}</p>
-            <Link href="/problems" className="mt-3 inline-block text-sm text-accent hover:underline">Back to problems</Link>
+            <Link href="/problems" className="mt-3 inline-block text-sm text-accent-ink hover:underline">Back to problems</Link>
           </div>
         ) : (
           <span className="h-5 w-5 animate-spin rounded-full border-2 border-line-strong border-t-accent" aria-label="Loading" />
@@ -227,7 +227,7 @@ export default function ProblemPage() {
 
   const editorCard = (
     <Card>
-      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-line bg-[#111317] px-2">
+      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-line bg-surface px-2">
         <span className="flex items-center gap-2 px-2 text-xs font-medium text-zinc-300">
           Code
           {problem.variants.length > 1 ? (
@@ -250,7 +250,7 @@ export default function ProblemPage() {
         </span>
         {!dbg.active && <SaveIndicator status={draft.status} />}
         {dbg.active && (
-          <span className="flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11px] text-accent">
+          <span className="flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11px] text-accent-ink">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
             Debugging {caseLabel} · read-only
           </span>
@@ -275,7 +275,7 @@ export default function ProblemPage() {
               onClick={() => void startDebug()}
               disabled={dbg.starting || !debugArgs || !canDebug}
               title={canDebug ? `Debug ${caseLabel} (F5)` : "The debugger doesn't support this language yet"}
-              className="border border-accent/40 text-accent hover:bg-accent/10"
+              className="border border-accent/40 text-accent-ink hover:bg-accent/10"
             >
               <BugIcon className="size-3.5" /> {dbg.starting ? "Recording…" : "Debug"}
             </ToolbarButton>
@@ -302,7 +302,7 @@ export default function ProblemPage() {
             onClick={() => execute("submit")}
             disabled={pending !== null}
             title="Submit (Ctrl+Enter)"
-            className="bg-green-600 font-semibold text-white hover:bg-green-500"
+            className="bg-green-600 font-semibold text-foreground hover:bg-green-500"
           >
             <UploadIcon className="size-3.5" /> Submit
           </ToolbarButton>
@@ -466,7 +466,7 @@ function Card({ children }: { children: ReactNode }) {
 
 function CardTabs({ children }: { children: ReactNode }) {
   return (
-    <div role="tablist" className="flex h-10 shrink-0 items-center gap-1 border-b border-line bg-[#111317] px-2">
+    <div role="tablist" className="flex h-10 shrink-0 items-center gap-1 border-b border-line bg-surface px-2">
       {children}
     </div>
   );
@@ -488,7 +488,7 @@ function CardTab({ active, onClick, icon, children }: {
         active ? "bg-surface-2 font-medium text-zinc-100" : "text-zinc-500 hover:text-zinc-300"
       }`}
     >
-      <span className={active ? "text-accent" : ""}>{icon}</span>
+      <span className={active ? "text-accent-ink" : ""}>{icon}</span>
       {children}
     </button>
   );

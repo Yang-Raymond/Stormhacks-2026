@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import ThemeMenu from "@/components/ThemeMenu";
 import UserMenu from "@/components/UserMenu";
 import { api, type User } from "@/lib/api";
 
@@ -50,7 +51,7 @@ export default function Nav() {
   }
 
   return (
-    <nav className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-6 border-b border-line bg-canvas/90 px-4 backdrop-blur sm:px-6">
+    <nav className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 sm:gap-6 border-b border-line bg-canvas/90 px-4 backdrop-blur sm:px-6">
       <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
         <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-accent font-mono text-xs font-bold text-zinc-950">
           &gt;_
@@ -67,8 +68,8 @@ export default function Nav() {
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`relative flex h-full items-center px-3 text-sm transition-colors ${
-                  active ? "text-white" : "text-zinc-400 hover:text-zinc-200"
+                className={`relative flex h-full items-center px-2 sm:px-3 text-sm transition-colors ${
+                  active ? "text-foreground" : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
                 {label}
@@ -80,6 +81,7 @@ export default function Nav() {
       )}
 
       <div className="ml-auto flex items-center gap-3">
+        <ThemeMenu />
         {user ? (
           <UserMenu user={user} onLogout={logout} />
         ) : (

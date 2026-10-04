@@ -110,7 +110,7 @@ export default function ProfilePage() {
                 avatarUrl={user.avatarUrl}
               />
               <div className="min-w-0 flex-1">
-                <h1 className="truncate text-lg font-bold text-white">
+                <h1 className="truncate text-lg font-bold text-foreground">
                   {user.fullName || "User"}
                 </h1>
                 <p className="truncate font-mono text-xs text-zinc-400">
@@ -122,7 +122,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => setIsEditOpen(true)}
-              className="mt-5 w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-center text-xs font-semibold text-zinc-200 transition-colors hover:bg-zinc-800 hover:text-white"
+              className="mt-5 w-full rounded-lg border border-line-strong bg-surface-2 px-3 py-2 text-center text-xs font-semibold text-zinc-200 transition-colors hover:bg-zinc-800 hover:text-foreground"
             >
               Edit profile
             </button>
@@ -135,7 +135,7 @@ export default function ProfilePage() {
 
           {/* Languages Card */}
           <div className="rounded-xl border border-line bg-surface p-5">
-            <h2 className="text-sm font-semibold text-white">Languages</h2>
+            <h2 className="text-sm font-semibold text-foreground">Languages</h2>
             {languages.length > 0 ? (
               <div className="mt-4 space-y-3">
                 {languages.map((l) => (
@@ -168,7 +168,7 @@ export default function ProfilePage() {
             <div className="rounded-xl border border-line bg-surface p-4">
               <p className="text-xs font-medium text-zinc-400">Bugs solved</p>
               <div className="mt-2 flex items-baseline">
-                <span className="text-2xl font-bold tabular-nums text-white sm:text-3xl">
+                <span className="text-2xl font-bold tabular-nums text-foreground sm:text-3xl">
                   {stats.solved}
                 </span>
                 <span className="ml-1.5 text-xs font-medium text-zinc-500 sm:text-sm">
@@ -181,7 +181,7 @@ export default function ProfilePage() {
             <div className="rounded-xl border border-line bg-surface p-4">
               <p className="text-xs font-medium text-zinc-400">Current streak</p>
               <div className="mt-2 flex items-baseline">
-                <span className="text-2xl font-bold tabular-nums text-white sm:text-3xl">
+                <span className="text-2xl font-bold tabular-nums text-foreground sm:text-3xl">
                   {streakDays}
                 </span>
                 <span className="ml-1.5 text-xs font-medium text-zinc-500 sm:text-sm">
@@ -194,7 +194,7 @@ export default function ProfilePage() {
             <div className="rounded-xl border border-line bg-surface p-4">
               <p className="text-xs font-medium text-zinc-400">Median solve time</p>
               <div className="mt-2 flex items-baseline">
-                <span className="text-2xl font-bold tabular-nums text-white sm:text-3xl">
+                <span className="text-2xl font-bold tabular-nums text-foreground sm:text-3xl">
                   {medianTime.value}
                 </span>
                 {medianTime.unit && (
@@ -211,7 +211,7 @@ export default function ProfilePage() {
                 Solved without hints
               </p>
               <div className="mt-2 flex items-baseline">
-                <span className="text-2xl font-bold tabular-nums text-white sm:text-3xl">
+                <span className="text-2xl font-bold tabular-nums text-foreground sm:text-3xl">
                   {noHintPercent}
                 </span>
                 {stats.noHintRate !== null && (
@@ -225,7 +225,7 @@ export default function ProfilePage() {
 
           {/* Solved by difficulty */}
           <div className="rounded-xl border border-line bg-surface p-5">
-            <h2 className="text-sm font-semibold text-white">
+            <h2 className="text-sm font-semibold text-foreground">
               Solved by difficulty
             </h2>
             <div className="mt-4 space-y-4">
@@ -257,7 +257,7 @@ export default function ProfilePage() {
           {/* Activity Heatmap */}
           <div className="rounded-xl border border-line bg-surface p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-white">Activity</h2>
+              <h2 className="text-sm font-semibold text-foreground">Activity</h2>
               <p className="text-xs text-zinc-400">
                 Problems attempted per day, last 26 weeks
               </p>
@@ -278,14 +278,14 @@ export default function ProfilePage() {
           {/* Recent submissions */}
           <div className="rounded-xl border border-line bg-surface p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-white">
+              <h2 className="text-sm font-semibold text-foreground">
                 Recent submissions
               </h2>
               {recent.length > 5 && (
                 <button
                   type="button"
                   onClick={() => setShowAllSubmissions((prev) => !prev)}
-                  className="text-xs font-semibold text-accent transition-colors hover:text-accent-hover"
+                  className="text-xs font-semibold text-accent-ink transition-colors hover:text-accent-ink"
                 >
                   {showAllSubmissions ? "Show less" : "View all"}
                 </button>
@@ -313,7 +313,7 @@ export default function ProfilePage() {
                         <td className="py-3 pr-4 font-medium">
                           <Link
                             href={`/problems/${sub.problemId}`}
-                            className="text-zinc-200 transition-colors hover:text-white"
+                            className="text-zinc-200 transition-colors hover:text-foreground"
                           >
                             {sub.title}
                           </Link>
@@ -352,7 +352,7 @@ export default function ProfilePage() {
                 <p>No submissions yet.</p>
                 <Link
                   href="/problems"
-                  className="mt-2 inline-block font-semibold text-accent hover:underline"
+                  className="mt-2 inline-block font-semibold text-accent-ink hover:underline"
                 >
                   Start solving problems &rarr;
                 </Link>

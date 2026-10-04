@@ -108,7 +108,7 @@ function TestCard({ title, result: r, params, onDebug, onHint }: {
       <div className="flex items-center gap-2 border-b border-line/70 px-3 py-2">
         <span
           className={`flex h-5 w-5 items-center justify-center rounded-full ${
-            r.passed ? "bg-[#12281c] text-easy" : "bg-red-500/15 text-red-400"
+            r.passed ? "bg-success-surface text-easy" : "bg-red-500/15 text-red-400"
           }`}
         >
           {r.passed ? <CheckIcon className="size-3" /> : <XIcon className="size-3" />}
@@ -128,7 +128,7 @@ function TestCard({ title, result: r, params, onDebug, onHint }: {
           <button
             type="button"
             onClick={onDebug}
-            className={`${onHint ? "" : "ml-auto "}flex items-center gap-1.5 rounded-md border border-accent/30 px-2 py-1 text-xs text-accent transition-colors hover:bg-accent/10`}
+            className={`${onHint ? "" : "ml-auto "}flex items-center gap-1.5 rounded-md border border-accent/30 px-2 py-1 text-xs text-accent-ink transition-colors hover:bg-accent/10`}
           >
             <BugIcon className="size-3.5" />
             Debug this case

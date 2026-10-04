@@ -53,7 +53,7 @@ export default function Avatar({
   return (
     <div
       aria-hidden="true"
-      className={`flex shrink-0 select-none items-center justify-center rounded-full bg-[#1c1810] text-accent ${container} ${className}`}
+      className={`flex shrink-0 select-none items-center justify-center rounded-full bg-warning-surface text-accent-ink ${container} ${className}`}
     >
       <span className={text}>{initials}</span>
     </div>

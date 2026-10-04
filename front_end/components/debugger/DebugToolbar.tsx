@@ -34,7 +34,7 @@ export default function DebugToolbar({ dbg }: { dbg: Debugger }) {
   const controls: Control[] = [
     { label: "Reverse continue", icon: ReverseContinueIcon, onClick: c.reverseContinue, disabled: atStart },
     { label: "Step back", shortcut: "Shift+F10", icon: StepBackIcon, onClick: c.stepBack, disabled: atStart },
-    { label: "Continue", shortcut: "F5", icon: ContinueIcon, onClick: c.continue, disabled: atEnd, className: "text-accent" },
+    { label: "Continue", shortcut: "F5", icon: ContinueIcon, onClick: c.continue, disabled: atEnd, className: "text-accent-ink" },
     { label: "Step over", shortcut: "F10", icon: StepOverIcon, onClick: c.stepOver, disabled: atEnd },
     { label: "Step into", shortcut: "F11", icon: StepIntoIcon, onClick: c.stepInto, disabled: atEnd },
     { label: "Step out", shortcut: "Shift+F11", icon: StepOutIcon, onClick: c.stepOut, disabled: atEnd },
@@ -45,7 +45,7 @@ export default function DebugToolbar({ dbg }: { dbg: Debugger }) {
   const status = describeStop(dbg);
 
   return (
-    <div className="border-b border-line bg-[#111317]">
+    <div className="border-b border-line bg-surface">
       <div className="flex h-10 items-center gap-1 px-2">
         <div role="toolbar" aria-label="Debugger controls" className="flex items-center gap-0.5 rounded-md border border-line bg-canvas-2 p-0.5">
           {controls.map(({ label, shortcut, icon: Icon, onClick, disabled, className = "" }) => (
@@ -56,7 +56,7 @@ export default function DebugToolbar({ dbg }: { dbg: Debugger }) {
               disabled={disabled}
               title={shortcut ? `${label} (${shortcut})` : label}
               aria-label={label}
-              className={`flex h-7 w-7 items-center justify-center rounded text-zinc-300 transition-colors hover:bg-surface-2 hover:text-white disabled:pointer-events-none disabled:opacity-30 ${className}`}
+              className={`flex h-7 w-7 items-center justify-center rounded text-zinc-300 transition-colors hover:bg-surface-2 hover:text-foreground disabled:pointer-events-none disabled:opacity-30 ${className}`}
             >
               <Icon className="size-4" />
             </button>
@@ -85,7 +85,7 @@ export default function DebugToolbar({ dbg }: { dbg: Debugger }) {
             value={dbg.stepIndex}
             onChange={(e) => c.goTo(Number(e.target.value))}
             aria-label="Execution timeline"
-            className="relative z-10 block w-full cursor-pointer accent-[#f2b544]"
+            className="relative z-10 block w-full cursor-pointer accent-accent"
           />
           <div aria-hidden="true" className="pointer-events-none absolute inset-x-[7px] -bottom-1 h-1">
             {last > 0 &&

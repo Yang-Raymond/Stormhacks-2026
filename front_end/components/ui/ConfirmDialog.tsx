@@ -8,7 +8,7 @@ const tones = {
     confirm: "bg-red-600 text-white hover:bg-red-500",
   },
   accent: {
-    icon: "border-accent/40 bg-accent/10 text-accent",
+    icon: "border-accent/40 bg-accent/10 text-accent-ink",
     confirm: "bg-accent text-zinc-950 hover:bg-accent-hover",
   },
 };
@@ -49,7 +49,7 @@ export default function ConfirmDialog({ open, title, children, confirmLabel, ico
           </span>
         )}
         <div>
-          <h2 id={titleId} className="font-semibold text-white">{title}</h2>
+          <h2 id={titleId} className="font-semibold text-foreground">{title}</h2>
           <div className="mt-1.5 text-sm leading-relaxed text-zinc-400">{children}</div>
         </div>
       </div>

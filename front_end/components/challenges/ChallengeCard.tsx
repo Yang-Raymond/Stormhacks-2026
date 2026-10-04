@@ -17,7 +17,7 @@ const KIND = {
     reset: "every day at 00:00 UTC",
     icon: CalendarIcon,
     glow: "bg-accent/10",
-    iconClass: "border-accent/30 bg-accent/10 text-accent",
+    iconClass: "border-accent/30 bg-accent/10 text-accent-ink",
   },
   weekly: {
     title: "Weekly challenge",
@@ -79,7 +79,7 @@ export default function ChallengeCard({ kind, slot, loggedIn, defaultLanguage, o
           <Icon className="size-4.5" />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-white">{meta.title}</h3>
+          <h3 className="font-semibold text-foreground">{meta.title}</h3>
           <p className="mt-0.5 text-xs text-zinc-500">
             {challenge ? <DifficultyBadge difficulty={challenge.difficulty} /> : meta.difficulty} · resets {meta.reset}
           </p>
@@ -100,7 +100,7 @@ export default function ChallengeCard({ kind, slot, loggedIn, defaultLanguage, o
           <div className="flex-1 animate-pulse rounded-lg bg-surface-2" />
         ) : !loggedIn ? (
           <p className="text-sm text-zinc-400">
-            <Link href="/login" className="text-accent hover:underline">Log in</Link> to take on {kind} challenges.
+            <Link href="/login" className="text-accent-ink hover:underline">Log in</Link> to take on {kind} challenges.
           </p>
         ) : generating ? (
           <>
@@ -116,7 +116,7 @@ export default function ChallengeCard({ kind, slot, loggedIn, defaultLanguage, o
               className="group flex items-center gap-3 rounded-lg border border-line bg-canvas-2/60 px-3 py-2.5 transition-colors hover:border-line-strong"
             >
               {challenge.solved ? (
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#1e4a33] bg-[#12281c] text-easy">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-success-line bg-success-surface text-easy">
                   <CheckIcon className="size-3.5" />
                 </span>
               ) : (
@@ -126,7 +126,7 @@ export default function ChallengeCard({ kind, slot, loggedIn, defaultLanguage, o
               <span className="shrink-0 rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[11px] text-zinc-400">
                 {languageInfo(challenge.language).label}
               </span>
-              <ChevronRightIcon className="size-4 shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-accent" />
+              <ChevronRightIcon className="size-4 shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-accent-ink" />
             </Link>
             <p className={`mt-3 text-xs ${challenge.solved ? "text-easy" : "text-zinc-500"}`}>
               {challenge.solved
@@ -162,7 +162,7 @@ export default function ChallengeCard({ kind, slot, loggedIn, defaultLanguage, o
               ))}
             </select>
             <p className="mt-2 flex items-start gap-1.5 text-xs text-zinc-500">
-              <LockIcon className="mt-px size-3.5 shrink-0 text-accent" />
+              <LockIcon className="mt-px size-3.5 shrink-0 text-accent-ink" />
               The language is locked once the challenge is generated.
             </p>
             {error && <p role="alert" className="mt-3 text-xs text-red-400">{error}</p>}

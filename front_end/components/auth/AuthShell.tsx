@@ -8,11 +8,11 @@ interface AuthShellProps {
 
 export default function AuthShell({ side, form, marketing }: AuthShellProps) {
   return (
-    <div className="min-h-screen w-full flex flex-col lg:grid lg:grid-cols-2 bg-[#0d0e12] text-zinc-100">
+    <div className="min-h-screen w-full flex flex-col lg:grid lg:grid-cols-2 bg-canvas text-zinc-100">
       {side === "left" ? (
         <>
           {/* Left: Form side (Log in) */}
-          <section className="relative flex flex-col justify-between p-6 sm:p-10 lg:p-12 min-h-screen lg:border-r lg:border-[#1f2229]">
+          <section className="relative flex flex-col justify-between p-6 sm:p-10 lg:p-12 min-h-screen lg:border-r lg:border-line">
             <div>
               <Logo />
             </div>
@@ -27,7 +27,7 @@ export default function AuthShell({ side, form, marketing }: AuthShellProps) {
           </section>
 
           {/* Right: Marketing/Preview side */}
-          <section className="hidden lg:flex flex-col justify-center items-center p-12 bg-[#0a0b0e] relative overflow-hidden">
+          <section className="hidden lg:flex flex-col justify-center items-center p-12 bg-canvas-2 relative overflow-hidden">
             <div className="w-full max-w-[450px]">
               {marketing}
             </div>
@@ -36,7 +36,7 @@ export default function AuthShell({ side, form, marketing }: AuthShellProps) {
       ) : (
         <>
           {/* Left: Marketing/Feature side (Sign up) */}
-          <section className="relative flex flex-col justify-between p-6 sm:p-10 lg:p-12 lg:border-r lg:border-[#1f2229]">
+          <section className="relative flex flex-col justify-between p-6 sm:p-10 lg:p-12 lg:border-r lg:border-line">
             <div>
               <Logo />
             </div>
@@ -51,7 +51,7 @@ export default function AuthShell({ side, form, marketing }: AuthShellProps) {
           </section>
 
           {/* Right: Form side */}
-          <section className="flex flex-col justify-center items-center p-6 sm:p-10 lg:p-12 bg-[#0a0b0e] min-h-screen lg:min-h-0">
+          <section className="flex flex-col justify-center items-center p-6 sm:p-10 lg:p-12 bg-canvas-2 min-h-screen lg:min-h-0">
             <div className="w-full max-w-[410px]">
               {form}
             </div>

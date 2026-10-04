@@ -10,7 +10,7 @@ export default function LoginPage() {
       <AuthShell
         side="left"
         form={
-          <Suspense fallback={<div className="h-96 w-full animate-pulse rounded-lg bg-[#16181d]/50" />}>
+          <Suspense fallback={<div className="h-96 w-full animate-pulse rounded-lg bg-surface/50" />}>
             <LoginForm />
           </Suspense>
         }

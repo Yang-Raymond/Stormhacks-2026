@@ -17,7 +17,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} min-h-screen bg-[#0d0e12] text-zinc-100 selection:bg-[#f2b544]/25 selection:text-[#f2b544]`}
+      className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} min-h-screen bg-canvas text-zinc-100 selection:bg-accent/25 selection:text-accent-ink`}
       style={{ fontFamily: "var(--font-ibm-plex-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
     >
       {children}

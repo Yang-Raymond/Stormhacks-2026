@@ -3,6 +3,7 @@
 import type { BeforeMount, Monaco, OnMount } from "@monaco-editor/react";
 import dynamic from "next/dynamic";
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { useTheme } from "@/hooks/useTheme";
 import type { Breakpoints } from "@/lib/debugger";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -40,6 +41,18 @@ export type CodeEditorProps = {
 };
 
 const defineTheme: BeforeMount = (monaco) => {
+  monaco.editor.defineTheme("ladybug-light", {
+    base: "vs",
+    inherit: true,
+    rules: [],
+    colors: {
+      "editor.background": "#ffffff",
+      "editorGutter.background": "#ffffff",
+      "editor.lineHighlightBackground": "#f0f2f5",
+      "editor.selectionBackground": "#f2b54450",
+      "editorCursor.foreground": "#8a5500",
+    },
+  });
   monaco.editor.defineTheme("ladybug", {
     base: "vs-dark",
     inherit: true,
@@ -82,6 +95,7 @@ function breakpointDecorations(monaco: Monaco, breakpoints: Breakpoints, lineCou
 }
 
 export default function CodeEditor(props: CodeEditorProps) {
+  const { resolved } = useTheme();
   const { value, onChange, readOnly, breakpoints, currentLine, currentIsException, frameLine, inlineValues } = props;
   const editorRef = useRef<StandaloneEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
@@ -234,7 +248,7 @@ export default function CodeEditor(props: CodeEditorProps) {
       <MonacoEditor
         height="100%"
         language={props.language ?? "python"}
-        theme="ladybug"
+        theme={resolved === "light" ? "ladybug-light" : "ladybug"}
         value={value}
         beforeMount={defineTheme}
         onMount={handleMount}

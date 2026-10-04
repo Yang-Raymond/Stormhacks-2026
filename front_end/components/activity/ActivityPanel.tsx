@@ -20,7 +20,7 @@ export default function ActivityPanel() {
     <section aria-labelledby="activity-heading" className="mt-8 rounded-xl border border-line bg-surface p-5">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <div className="lg:w-56 lg:shrink-0">
-          <h2 id="activity-heading" className="text-sm font-semibold text-white">Your activity</h2>
+          <h2 id="activity-heading" className="text-sm font-semibold text-foreground">Your activity</h2>
           <dl className="mt-3 grid grid-cols-3 gap-3 lg:grid-cols-1">
             <Stat label="Current streak" value={activity.streak.current} unit={activity.streak.current === 1 ? "day" : "days"} />
             <Stat label="Longest streak" value={activity.streak.longest} unit={activity.streak.longest === 1 ? "day" : "days"} />
@@ -41,7 +41,7 @@ function Stat({ label, value, unit }: { label: string; value: number; unit?: str
     <div className="rounded-lg border border-line bg-canvas-2/60 px-3 py-2">
       <dt className="text-[11px] text-zinc-500">{label}</dt>
       <dd className="mt-0.5 flex items-baseline gap-1">
-        <span className="text-xl font-semibold tabular-nums text-white">{value}</span>
+        <span className="text-xl font-semibold tabular-nums text-foreground">{value}</span>
         {unit && <span className="text-xs text-zinc-500">{unit}</span>}
       </dd>
     </div>

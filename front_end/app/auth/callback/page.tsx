@@ -36,7 +36,7 @@ function CallbackHandler() {
       <Logo />
       <div className="flex items-center gap-3 mt-4 text-sm text-zinc-400">
         <svg
-          className="h-5 w-5 animate-spin text-[#f2b544]"
+          className="h-5 w-5 animate-spin text-accent-ink"
           viewBox="0 0 24 24"
           fill="none"
         >
@@ -62,7 +62,7 @@ function CallbackHandler() {
 
 export default function CallbackPage() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#0d0e12] text-zinc-100 p-6">
+    <div className="min-h-screen w-full flex items-center justify-center bg-canvas text-zinc-100 p-6">
       <Suspense
         fallback={
           <div className="flex flex-col items-center gap-4">

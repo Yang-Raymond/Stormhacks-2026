@@ -6,7 +6,7 @@ export function FinalCta() {
     <section className="border-t border-line/60 py-20 sm:py-24">
       <div className={`${container} flex flex-col items-start justify-between gap-8 md:flex-row md:items-center`}>
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+          <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
             Today&apos;s bug is waiting.
           </h2>
           <p className="mt-3 text-sm sm:text-base text-zinc-400">
@@ -33,7 +33,7 @@ export function LandingFooter() {
     <footer className="border-t border-line py-10">
       <div className={`${container} flex flex-col items-center justify-between gap-6 sm:flex-row`}>
         {/* Left: Brand */}
-        <span className="text-sm font-bold tracking-tight text-white">LadyBug</span>
+        <span className="text-sm font-bold tracking-tight text-foreground">LadyBug</span>
 
         {/* Center: Links */}
         <nav className="flex items-center gap-6 sm:gap-8">

@@ -88,7 +88,7 @@ function eventOf(req: Request, p: LoadedProblem, kind: "run" | "submit" | "debug
 }
 
 /** Languages the runner can trace (runner/languages TRACERS); keep in sync with front_end/lib/languages.ts. */
-const debuggable: ReadonlySet<Language> = new Set(["python", "javascript", "typescript"]);
+const debuggable: ReadonlySet<Language> = new Set(["python", "javascript", "typescript", "java", "c", "cpp"]);
 
 function requireDebuggable(p: LoadedProblem) {
   if (!debuggable.has(p.language)) throw new HttpError(400, `The debugger doesn't support ${p.language} yet`);

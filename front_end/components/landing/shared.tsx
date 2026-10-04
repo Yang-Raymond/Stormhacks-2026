@@ -4,7 +4,7 @@ export const container = "mx-auto w-full max-w-[1200px] px-6 sm:px-8";
 
 export function Eyebrow({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <p className={`font-mono text-xs font-semibold uppercase tracking-[0.14em] text-accent ${className}`}>
+    <p className={`font-mono text-xs font-semibold uppercase tracking-[0.14em] text-accent-ink ${className}`}>
       {children}
     </p>
   );
@@ -13,7 +13,7 @@ export function Eyebrow({ children, className = "" }: { children: React.ReactNod
 export function LogoMark({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`inline-flex h-7 w-7 items-center justify-center rounded-md border border-accent bg-[#14161b] font-mono text-xs font-bold text-accent shadow-sm ${className}`}
+      className={`inline-flex h-7 w-7 items-center justify-center rounded-md border border-accent bg-surface font-mono text-xs font-bold text-accent-ink shadow-sm ${className}`}
     >
       &gt;_
     </span>
@@ -54,7 +54,7 @@ export function SecondaryButton({
   return (
     <Link
       href={href}
-      className={`${btnBase} border border-line-strong bg-[#14161b] text-white hover:border-zinc-500 hover:bg-surface-2 ${className}`}
+      className={`${btnBase} border border-line-strong bg-surface text-foreground hover:border-zinc-500 hover:bg-surface-2 ${className}`}
     >
       {children}
     </Link>

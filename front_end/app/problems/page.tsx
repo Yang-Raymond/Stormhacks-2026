@@ -89,8 +89,8 @@ export default function ProblemsPage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <header>
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent">Debug practice</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-white">Problems</h1>
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-ink">Debug practice</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Problems</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
           Each problem is a real solution with bugs slipped in. Read the spec, step through the code with the
           debugger, and fix it until every hidden test passes.
@@ -102,12 +102,12 @@ export default function ProblemsPage() {
       <ChallengesSection />
 
       <div className="mt-12 flex flex-wrap items-baseline justify-between gap-2 border-t border-line pt-8">
-        <h2 className="text-lg font-semibold text-white">Practice</h2>
+        <h2 className="text-lg font-semibold text-foreground">Practice</h2>
         <p className="text-xs text-zinc-500">Problems in every language, come back any time.</p>
       </div>
 
       <section aria-label="Practice progress" className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="Solved" solved={solvedCount} total={list.length} barClass="bg-accent" valueClass="text-white" />
+        <StatTile label="Solved" solved={solvedCount} total={list.length} barClass="bg-accent" valueClass="text-foreground" />
         {DIFFICULTIES.map((d) => {
           const ofDifficulty = list.filter((p) => p.difficulty === d);
           return (
@@ -187,7 +187,7 @@ export default function ProblemsPage() {
               >
                 <SolvedMark solved={p.solved} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-zinc-100 group-hover:text-white">{p.title}</p>
+                  <p className="truncate font-medium text-zinc-100 group-hover:text-foreground">{p.title}</p>
                   <div className="mt-0.5 flex items-center gap-2">
                     <span className="font-mono text-xs text-zinc-500">
                       #{p.id} · {relativeTime(p.created_at)}
@@ -198,7 +198,7 @@ export default function ProblemsPage() {
                   </div>
                 </div>
                 <DifficultyBadge difficulty={p.difficulty} />
-                <ChevronRightIcon className="size-4 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-accent" />
+                <ChevronRightIcon className="size-4 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-accent-ink" />
               </Link>
             </li>
           ))}
@@ -206,7 +206,7 @@ export default function ProblemsPage() {
 
         {problems !== null && visible.length === 0 && (
           <div className="mt-2 flex flex-col items-center rounded-lg border border-dashed border-line-strong px-6 py-14 text-center">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full border border-line-strong bg-surface text-accent">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full border border-line-strong bg-surface text-accent-ink">
               <SparklesIcon className="size-5" />
             </span>
             {list.length === 0 ? (
@@ -224,7 +224,7 @@ export default function ProblemsPage() {
                     setDifficultyFilter("all");
                     setStatus("all");
                   }}
-                  className="mt-2 text-sm text-accent hover:underline"
+                  className="mt-2 text-sm text-accent-ink hover:underline"
                 >
                   Clear filters
                 </button>
@@ -294,7 +294,7 @@ function SolvedMark({ solved }: { solved: boolean }) {
   return solved ? (
     <span
       title="Solved"
-      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#1e4a33] bg-[#12281c] text-easy"
+      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-success-line bg-success-surface text-easy"
     >
       <CheckIcon className="size-3.5" />
       <span className="sr-only">Solved</span>

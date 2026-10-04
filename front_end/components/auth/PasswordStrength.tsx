@@ -38,7 +38,7 @@ function getScoreColor(score: number): string {
     case 4:
       return "bg-green-500";
     default:
-      return "bg-[#232730]";
+      return "bg-line";
   }
 }
 
@@ -56,7 +56,7 @@ export default function PasswordStrength({ password }: { password: string }) {
             <div
               key={step}
               className={`h-1 rounded-full transition-colors duration-200 ${
-                isActive ? getScoreColor(score) : "bg-[#232730]"
+                isActive ? getScoreColor(score) : "bg-line"
               }`}
             />
           );

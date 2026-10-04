@@ -8,12 +8,12 @@ export default function Hero() {
         {/* Left Column */}
         <div className="flex flex-col items-start">
           {/* Eyebrow badge */}
-          <div className="inline-flex items-center rounded-full border border-accent/30 bg-accent/10 px-3.5 py-1 text-xs font-mono font-medium text-accent">
+          <div className="inline-flex items-center rounded-full border border-accent/30 bg-accent/10 px-3.5 py-1 text-xs font-mono font-medium text-accent-ink">
             debugging practice, one bug at a time
           </div>
 
           {/* Main Title */}
-          <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-[58px] lg:leading-[1.1]">
+          <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-[58px] lg:leading-[1.1]">
             Get better at
             <br />
             finding bugs.

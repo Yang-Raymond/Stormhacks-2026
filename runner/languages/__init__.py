@@ -16,7 +16,7 @@ import secrets
 import tempfile
 from dataclasses import dataclass, field
 
-from sandbox import Limits, describe_exit, run
+from sandbox import MB, Limits, describe_exit, run
 
 # Language-neutral types a problem signature may use (see server/src/languages.ts).
 TYPES = {"int", "double", "bool", "string", "int[]", "double[]", "bool[]", "string[]", "int[][]"}
@@ -36,6 +36,23 @@ class Program:
 
 class UnsupportedSignature(ValueError):
     pass
+
+
+GDB_TRACER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gdb_tracer.py")
+# gdb plus the traced program; tracing is far slower than running, hence the larger budget.
+GDB_LIMITS = Limits(cpu=10, wall=10, memory=1024 * MB, fsize=8 * MB, nofile=64)
+
+
+def gdb_program(files, compile, compile_limits, source, breakpoint, cxx):
+    """A tracer Program that runs the compiled test driver (`./main`) under gdb_tracer.py."""
+    return Program(
+        files=files,
+        compile=compile,
+        compile_limits=compile_limits,
+        run=["gdb", "-batch", "-nx", "-q", "-x", GDB_TRACER, "./main"],
+        run_limits=GDB_LIMITS,
+        env={"LB_SOURCE": source, "LB_BREAK": breakpoint, "LB_CXX": "1" if cxx else "0"},
+    )
 
 
 def matches(actual, expected):
@@ -172,25 +189,27 @@ def trace(build, code, entry_point, signature, spec):
 
 
 def _registry():
-    from . import c, cpp, csharp, java, node
+    from . import c, cpp, java, node
 
     builders = {
         "javascript": node.build_javascript,
         "typescript": node.build_typescript,
         "java": java.build,
-        "csharp": csharp.build,
         "cpp": cpp.build,
         "c": c.build,
     }
     tracers = {
         "javascript": node.trace_javascript,
         "typescript": node.trace_typescript,
+        "java": java.trace,
+        "cpp": cpp.trace,
+        "c": c.trace,
     }
     return builders, tracers
 
 
 BUILDERS, TRACERS = _registry()
 # Statically typed languages need the signature to convert JSON arguments into native values.
-NEEDS_SIGNATURE = {"java", "csharp", "cpp", "c"}
+NEEDS_SIGNATURE = {"java", "cpp", "c"}
 LANGUAGES = {"python", *BUILDERS}
 DEBUGGABLE = {"python", *TRACERS}

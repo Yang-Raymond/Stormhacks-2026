@@ -30,7 +30,7 @@ export default function HowItWorks() {
       <div className={container}>
         {/* Header */}
         <Eyebrow>HOW IT WORKS</Eyebrow>
-        <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl max-w-xl">
+        <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl max-w-xl">
           Practice the way real debugging happens
         </h2>
         <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-400">
@@ -48,12 +48,12 @@ export default function HowItWorks() {
             >
               <span
                 className={`font-mono text-sm font-semibold ${
-                  step.active ? "text-accent" : "text-zinc-500"
+                  step.active ? "text-accent-ink" : "text-zinc-500"
                 }`}
               >
                 {step.number}
               </span>
-              <h3 className="mt-3 text-xl font-bold tracking-tight text-white">
+              <h3 className="mt-3 text-xl font-bold tracking-tight text-foreground">
                 {step.title}
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-zinc-400">

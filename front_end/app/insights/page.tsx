@@ -25,8 +25,8 @@ export default function InsightsPage() {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <header>
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent">Powered by Snowflake</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-white">Insights</h1>
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-ink">Powered by Snowflake</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Insights</h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">
           Site-wide trends from every run, submission, debug session and hint. Activity is recorded in a Tiger Data
           hypertable and synced, anonymized, into a Snowflake warehouse where these numbers are computed.
@@ -48,7 +48,7 @@ export default function InsightsPage() {
 function NotConfigured() {
   return (
     <div className="mt-8 flex flex-col items-center rounded-xl border border-dashed border-line-strong px-6 py-14 text-center">
-      <span className="flex h-11 w-11 items-center justify-center rounded-full border border-line-strong bg-surface text-accent">
+      <span className="flex h-11 w-11 items-center justify-center rounded-full border border-line-strong bg-surface text-accent-ink">
         <BarChartIcon className="size-5" />
       </span>
       <p className="mt-4 font-medium text-zinc-200">The analytics warehouse isn&apos;t connected yet</p>
@@ -56,7 +56,7 @@ function NotConfigured() {
         Set the Snowflake environment variables on the server (see docs/integrations.md) and events will start syncing
         within a few minutes.
       </p>
-      <Link href="/problems" className="mt-4 text-sm text-accent hover:underline">Back to problems</Link>
+      <Link href="/problems" className="mt-4 text-sm text-accent-ink hover:underline">Back to problems</Link>
     </div>
   );
 }
@@ -116,7 +116,7 @@ function Dashboard({ data }: { data: Ready }) {
               {data.hardest.map((p) => (
                 <tr key={p.problem_id}>
                   <td className="py-2 pr-3">
-                    <Link href={`/problems/${p.problem_id}`} className="text-zinc-200 hover:text-accent">{p.title}</Link>
+                    <Link href={`/problems/${p.problem_id}`} className="text-zinc-200 hover:text-accent-ink">{p.title}</Link>
                   </td>
                   <td className="hidden py-2 pr-3 sm:table-cell">
                     <DifficultyBadge difficulty={p.difficulty as Difficulty} />
@@ -143,7 +143,7 @@ function Kpi({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-line bg-surface p-4">
       <dt className="text-xs font-medium uppercase tracking-wider text-zinc-500">{label}</dt>
-      <dd className="mt-2 text-2xl font-semibold tabular-nums text-white">{value}</dd>
+      <dd className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</dd>
     </div>
   );
 }
@@ -156,7 +156,7 @@ function Panel({ title, caption, className = "", children }: {
 }) {
   return (
     <section className={`rounded-xl border border-line bg-surface p-5 ${className}`}>
-      <h2 className="text-sm font-semibold text-white">{title}</h2>
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       <p className="mt-0.5 text-xs text-zinc-500">{caption}</p>
       <div className="mt-4">{children}</div>
     </section>

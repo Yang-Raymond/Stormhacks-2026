@@ -53,7 +53,7 @@ export default function Features() {
       <div className={container}>
         {/* Header */}
         <Eyebrow>WHY LADYBUG</Eyebrow>
-        <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+        <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
           Build the skill AI can&apos;t do for you
         </h2>
 
@@ -64,9 +64,9 @@ export default function Features() {
             return (
               <div
                 key={feat.title}
-                className="flex flex-col rounded-xl border border-line-strong/80 bg-[#14161b] p-6 transition-colors hover:border-zinc-700/80 sm:p-7"
+                className="flex flex-col rounded-xl border border-line-strong/80 bg-surface p-6 transition-colors hover:border-zinc-700/80 sm:p-7"
               >
-                <div className="mb-5 inline-flex text-accent">
+                <div className="mb-5 inline-flex text-accent-ink">
                   <Icon className="size-5" />
                 </div>
                 <h3 className="text-base font-bold tracking-tight text-zinc-100">
