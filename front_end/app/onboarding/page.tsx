@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, ApiError, type AuthMethod, type MeResponse, type User } from "@/lib/api";
 import Logo from "@/components/auth/Logo";
-import { ROLES, AVAILABLE_LANGS, getInitials } from "@/lib/profile";
+import { ROLES, getInitials } from "@/lib/profile";
+
+import { LANGUAGES, preferredLanguage, type Language } from "@/lib/languages";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -16,7 +18,7 @@ export default function OnboardingPage() {
 
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<string>("Software engineer");
-  const [selectedLangs, setSelectedLangs] = useState<string[]>(["Python"]);
+  const [language, setLanguage] = useState<Language>("python");
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const [pending, setPending] = useState(false);
@@ -39,7 +41,7 @@ export default function OnboardingPage() {
         setFullName(data.user.fullName || "");
         if (data.user.role) setRole(data.user.role);
         if (data.user.debugLanguages && data.user.debugLanguages.length > 0) {
-          setSelectedLangs(data.user.debugLanguages);
+          setLanguage(preferredLanguage(data.user.debugLanguages));
         }
         setLoading(false);
       })
@@ -53,22 +55,6 @@ export default function OnboardingPage() {
     router.push("/login");
   }
 
-  function toggleLanguage(lang: string) {
-    setSelectedLangs((prev) => {
-      const exists = prev.includes(lang);
-      if (exists) {
-        return prev.filter((l) => l !== lang);
-      } else {
-        return [...prev, lang];
-      }
-    });
-    setFieldErrors((prev) => {
-      const next = { ...prev };
-      delete next.languages;
-      return next;
-    });
-  }
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -76,14 +62,6 @@ export default function OnboardingPage() {
       setFieldErrors((prev) => ({
         ...prev,
         acceptTerms: "You must agree to the Terms of Service and Privacy Policy.",
-      }));
-      return;
-    }
-
-    if (selectedLangs.length === 0) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        languages: "Please select at least one language.",
       }));
       return;
     }
@@ -97,7 +75,7 @@ export default function OnboardingPage() {
         body: {
           fullName: fullName.trim(),
           role,
-          languages: selectedLangs,
+          languages: [language],
           acceptTerms: true,
         },
       });
@@ -280,41 +258,24 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {/* Languages you debug most */}
             <div className="mt-8">
-              <h2 className="text-base font-semibold text-white">Languages you debug most</h2>
+              <label htmlFor="preferred-language" className="block text-base font-semibold text-white">
+                Preferred language
+              </label>
               <p className="text-xs text-zinc-400 mt-1">
-                Pick any. We&apos;ll set up runtimes and test frameworks for these.
+                Problems open in this language when available.
               </p>
-
-              <div className="flex flex-wrap gap-2.5 mt-3">
-                {AVAILABLE_LANGS.map((lang) => {
-                  const isChecked = selectedLangs.includes(lang);
-                  return (
-                    <button
-                      key={lang}
-                      type="button"
-                      onClick={() => toggleLanguage(lang)}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium border transition-colors cursor-pointer select-none ${
-                        isChecked
-                          ? "border-[#f2b544] bg-[#f2b544]/10 text-white"
-                          : "border-[#232730] bg-[#16181d] text-zinc-300 hover:border-zinc-700"
-                      }`}
-                    >
-                      <span
-                        className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] ${
-                          isChecked
-                            ? "bg-[#f2b544] text-zinc-950 font-bold"
-                            : "border border-zinc-600 bg-transparent"
-                        }`}
-                      >
-                        {isChecked ? "✓" : ""}
-                      </span>
-                      <span>{lang}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              <select
+                id="preferred-language"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as Language)}
+                required
+                className="mt-3 w-full rounded-lg border border-line-strong bg-canvas px-3.5 py-2 text-sm text-white focus:border-accent focus:outline-none"
+              >
+                {LANGUAGES.map((lang) => (
+                  <option key={lang.id} value={lang.id}>{lang.label}</option>
+                ))}
+              </select>
               {fieldErrors.languages && (
                 <span className="text-xs text-red-400 mt-1.5 block">{fieldErrors.languages}</span>
               )}

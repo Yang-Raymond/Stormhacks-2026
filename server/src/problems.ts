@@ -87,8 +87,11 @@ function eventOf(req: Request, p: LoadedProblem, kind: "run" | "submit" | "debug
   return { userId: req.session.userId!, kind, problemId: p.id, language: p.language, difficulty: p.difficulty };
 }
 
-function requirePython(p: LoadedProblem) {
-  if (p.language !== "python") throw new HttpError(400, "The debugger currently supports Python only");
+/** Languages the runner can trace (runner/languages TRACERS); keep in sync with front_end/lib/languages.ts. */
+const debuggable: ReadonlySet<Language> = new Set(["python", "javascript", "typescript"]);
+
+function requireDebuggable(p: LoadedProblem) {
+  if (!debuggable.has(p.language)) throw new HttpError(400, `The debugger doesn't support ${p.language} yet`);
 }
 
 /**
@@ -235,17 +238,17 @@ problemsRouter.post("/:id/submit", requireAuth, async (req, res) => {
 // so these endpoints never expose hidden test data.
 problemsRouter.post("/:id/debug", requireAuth, debugLimiter, async (req, res) => {
   const p = await loadProblem(req);
-  requirePython(p);
+  requireDebuggable(p);
   const { code, args, conditions } = debugBody.parse(req.body);
   recordEvent(eventOf(req, p, "debug"));
-  res.json(await traceCode(code, p.entry_point, args, conditions));
+  res.json(await traceCode(code, p.entry_point, args, conditions, p.language, p.signature));
 });
 
 problemsRouter.post("/:id/debug/eval", requireAuth, debugLimiter, async (req, res) => {
   const p = await loadProblem(req);
-  requirePython(p);
+  requireDebuggable(p);
   const { code, args, conditions, ...at } = evalBody.parse(req.body);
-  res.json(await evalAtStep(code, p.entry_point, args, { ...at, conditions }));
+  res.json(await evalAtStep(code, p.entry_point, args, { ...at, conditions }, p.language, p.signature));
 });
 
 // AI hint (Snowflake Cortex, or Gemini when Cortex isn't available): a nudge about the student's code, never the fix.

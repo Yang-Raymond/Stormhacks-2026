@@ -76,8 +76,10 @@ export function traceCode(
   entryPoint: string,
   args: unknown[],
   conditions: BreakpointCondition[] = [],
+  language: Language = "python",
+  signature?: Signature | null,
 ): Promise<TraceResult> {
-  return callRunner("/trace", { code, entry_point: entryPoint, args, conditions });
+  return callRunner("/trace", { code, entry_point: entryPoint, args, conditions, language, signature: signature ?? undefined });
 }
 
 /** Replays the same call up to `step` and evaluates expressions in the given stack frame (0 = innermost). */
@@ -86,9 +88,19 @@ export function evalAtStep(
   entryPoint: string,
   args: unknown[],
   at: { step: number; frame: number; expressions: string[]; conditions?: BreakpointCondition[] },
+  language: Language = "python",
+  signature?: Signature | null,
 ): Promise<EvalResult> {
   const { conditions = [], ...evalSpec } = at;
-  return callRunner("/trace", { code, entry_point: entryPoint, args, conditions, eval: evalSpec });
+  return callRunner("/trace", {
+    code,
+    entry_point: entryPoint,
+    args,
+    conditions,
+    eval: evalSpec,
+    language,
+    signature: signature ?? undefined,
+  });
 }
 
 export function allPassed(run: RunResult, total: number) {

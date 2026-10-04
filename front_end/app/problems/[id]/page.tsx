@@ -192,8 +192,8 @@ export default function ProblemPage() {
   });
 
   const inline = useMemo(
-    () => (dbg.active && dbg.frameIndex === 0 ? inlineValues(dbg.steps, dbg.stepIndex, (l) => lines[l - 1] ?? "") : []),
-    [dbg.active, dbg.frameIndex, dbg.steps, dbg.stepIndex, lines],
+    () => (dbg.active && dbg.frameIndex === 0 ? inlineValues(dbg.steps, dbg.stepIndex, (l) => lines[l - 1] ?? "", problem?.language === "python" ? /#.*/ : /\/\/.*/) : []),
+    [dbg.active, dbg.frameIndex, dbg.steps, dbg.stepIndex, lines, problem?.language],
   );
 
   if (!problem) {
@@ -274,7 +274,7 @@ export default function ProblemPage() {
             <ToolbarButton
               onClick={() => void startDebug()}
               disabled={dbg.starting || !debugArgs || !canDebug}
-              title={canDebug ? `Debug ${caseLabel} (F5)` : "The debugger supports Python for now"}
+              title={canDebug ? `Debug ${caseLabel} (F5)` : "The debugger doesn't support this language yet"}
               className="border border-accent/40 text-accent hover:bg-accent/10"
             >
               <BugIcon className="size-3.5" /> {dbg.starting ? "Recording…" : "Debug"}
@@ -382,7 +382,7 @@ export default function ProblemPage() {
           ) : (
             <div className="flex h-full flex-col items-center justify-center px-6 text-center">
               <BugIcon className="size-6 text-zinc-600" />
-              <p className="mt-3 text-sm text-zinc-300">The time-travel debugger supports Python for now.</p>
+              <p className="mt-3 text-sm text-zinc-300">The time-travel debugger doesn&apos;t support this language yet.</p>
               <p className="mt-1 text-xs text-zinc-500">
                 This problem is in {language.label}. Use Run to check your fix against every test.
               </p>

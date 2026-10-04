@@ -9,16 +9,6 @@ export const ROLES = [
 
 export type Role = (typeof ROLES)[number];
 
-export const AVAILABLE_LANGS = [
-  "Python",
-  "TypeScript",
-  "JavaScript",
-  "Go",
-  "Other",
-] as const;
-
-export type AvailableLang = (typeof AVAILABLE_LANGS)[number];
-
 export function getInitials(name?: string | null, email?: string): string {
   if (name && name.trim()) {
     const parts = name.trim().split(/\s+/);

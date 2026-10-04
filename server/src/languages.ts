@@ -3,6 +3,7 @@ import { z } from "zod";
 export const languages = ["python", "javascript", "typescript", "java", "c", "cpp", "csharp"] as const;
 export type Language = (typeof languages)[number];
 export const languageSchema = z.enum(languages);
+export const preferredLanguagesSchema = z.array(languageSchema).length(1, "Select exactly one preferred language");
 
 export const languageLabels: Record<Language, string> = {
   python: "Python 3",

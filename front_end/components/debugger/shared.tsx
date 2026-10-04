@@ -38,13 +38,13 @@ export function IconButton({ label, onClick, disabled, children, className = "" 
   );
 }
 
-/** Colors a Python repr by its leading token, like a debugger's variables view. */
+/** Colors a value's repr by its leading token, like a debugger's variables view. */
 export function ValueText({ value, className = "" }: { value: string; className?: string }) {
   const color = /^-?\d/.test(value)
     ? "text-sky-300"
     : /^['"]/.test(value)
       ? "text-emerald-300"
-      : /^(True|False|None)$/.test(value)
+      : /^(True|False|None|true|false|null|undefined)$/.test(value)
         ? "text-violet-300"
         : "text-zinc-200";
   return <span className={`whitespace-pre-wrap break-all font-mono ${color} ${className}`}>{value}</span>;

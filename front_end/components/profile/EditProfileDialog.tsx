@@ -2,8 +2,9 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { api, ApiError, type User } from "@/lib/api";
-import { AVAILABLE_LANGS, ROLES, type AvailableLang, type Role } from "@/lib/profile";
-import { CheckIcon, XIcon } from "@/components/ui/icons";
+import { ROLES, type Role } from "@/lib/profile";
+import { LANGUAGES, preferredLanguage, type Language } from "@/lib/languages";
+import { XIcon } from "@/components/ui/icons";
 
 function EditProfileForm({
   user,
@@ -18,26 +19,11 @@ function EditProfileForm({
 
   const [fullName, setFullName] = useState(user.fullName || "");
   const [role, setRole] = useState<Role>((user.role as Role) || "Software engineer");
-  const [languages, setLanguages] = useState<AvailableLang[]>(
-    user.debugLanguages.length > 0
-      ? (user.debugLanguages.filter((l) =>
-          AVAILABLE_LANGS.includes(l as AvailableLang),
-        ) as AvailableLang[])
-      : ["Python"],
-  );
+  const [language, setLanguage] = useState<Language>(preferredLanguage(user.debugLanguages));
 
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
-  function toggleLanguage(lang: AvailableLang) {
-    if (languages.includes(lang)) {
-      if (languages.length === 1) return; // Must have at least one
-      setLanguages(languages.filter((l) => l !== lang));
-    } else {
-      setLanguages([...languages, lang]);
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,10 +31,7 @@ function EditProfileForm({
       setFieldErrors({ fullName: "Display name cannot be empty" });
       return;
     }
-    if (languages.length === 0) {
-      setFieldErrors({ languages: "Pick at least one language" });
-      return;
-    }
+
 
     setSaving(true);
     setFormError("");
@@ -60,7 +43,7 @@ function EditProfileForm({
         body: {
           fullName: fullName.trim(),
           role,
-          languages,
+          languages: [language],
         },
       });
 
@@ -158,32 +141,23 @@ function EditProfileForm({
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-zinc-300">
-            Practicing languages
+          <label htmlFor="edit-language" className="block text-xs font-medium text-zinc-300">
+            Preferred language
           </label>
           <p className="mt-0.5 text-[11px] text-zinc-400">
-            Pick at least one language you want to practice.
+            Problems open in this language when available.
           </p>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            {AVAILABLE_LANGS.map((lang) => {
-              const selected = languages.includes(lang);
-              return (
-                <button
-                  key={lang}
-                  type="button"
-                  onClick={() => toggleLanguage(lang)}
-                  className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-                    selected
-                      ? "border-accent bg-accent/10 text-accent"
-                      : "border-line-strong bg-canvas text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
-                  }`}
-                >
-                  {selected && <CheckIcon className="size-3" />}
-                  {lang}
-                </button>
-              );
-            })}
-          </div>
+          <select
+            id="edit-language"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as Language)}
+            required
+            className="mt-1.5 w-full rounded-lg border border-line-strong bg-canvas px-3.5 py-2 text-sm text-white focus:border-accent focus:outline-none"
+          >
+            {LANGUAGES.map((lang) => (
+              <option key={lang.id} value={lang.id}>{lang.label}</option>
+            ))}
+          </select>
           {fieldErrors.languages && (
             <p className="mt-1 text-xs text-red-400">{fieldErrors.languages}</p>
           )}

@@ -6,20 +6,11 @@ import { useCallback, useEffect, useState } from "react";
 import DifficultyBadge from "@/components/ui/DifficultyBadge";
 import { CheckIcon } from "@/components/ui/icons";
 import { ApiError, api, type ChallengeKind, type ChallengesResponse, type MeResponse } from "@/lib/api";
-import { LANGUAGES, type Language, languageInfo } from "@/lib/languages";
+import { preferredLanguage, type Language, languageInfo } from "@/lib/languages";
 import ChallengeCard from "./ChallengeCard";
 
 /** While a generation started elsewhere (another tab, or before navigating away) is running, check back. */
 const POLL_MS = 5000;
-
-/** Onboarding stores display names ("Python", "TypeScript"); pick the first one we can generate in. */
-function preferredLanguage(me: MeResponse | null): Language {
-  for (const name of me?.user?.debugLanguages ?? []) {
-    const match = LANGUAGES.find((l) => l.label.toLowerCase().startsWith(name.toLowerCase()));
-    if (match) return match.id;
-  }
-  return "python";
-}
 
 const shortDate = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" });
 
@@ -49,7 +40,7 @@ export default function ChallengesSection() {
   useEffect(() => {
     load();
     api<MeResponse>("/auth/me")
-      .then((me) => setDefaultLanguage(preferredLanguage(me)))
+      .then((me) => setDefaultLanguage(preferredLanguage(me.user?.debugLanguages)))
       .catch(() => {});
   }, [load]);
 
