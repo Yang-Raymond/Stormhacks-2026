@@ -13,7 +13,7 @@ test("each dropdown option saves and resolves to the same runnable language", ()
 });
 
 test("profile and onboarding reject empty, multiple, and unsupported selections", () => {
-  for (const value of [[], ["python", "java"], ["python", "python"], ["Go"], ["Other"], "python", null]) {
+  for (const value of [[], ["python", "java"], ["python", "python"], ["Rust"], ["Other"], "python", null]) {
     assert.equal(preferredLanguagesSchema.safeParse(value).success, false);
   }
 });
@@ -22,7 +22,7 @@ test("legacy preferences resolve to the first supported language", () => {
   assert.equal(preferredLanguage(["TypeScript", "Python"]), "typescript");
   assert.equal(preferredLanguage(["JavaScript"]), "javascript");
   assert.equal(preferredLanguage(["Python"]), "python");
-  assert.equal(preferredLanguage(["Go", "JavaScript"]), "javascript");
+  assert.equal(preferredLanguage(["Rust", "JavaScript"]), "javascript");
   assert.equal(preferredLanguage(["Other"]), "python");
   assert.equal(preferredLanguage(), "python");
 });

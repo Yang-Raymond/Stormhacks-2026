@@ -3,14 +3,12 @@ import express, { type ErrorRequestHandler } from "express";
 import session from "express-session";
 import { z } from "zod";
 import { activityRouter } from "./activity.js";
-import { startAnalyticsSync } from "./analyticsSync.js";
 import { authRouter } from "./auth.js";
 import { challengesRouter } from "./challenges.js";
 import { oauthRouter } from "./oauth.js";
 import { config, isProduction } from "./config.js";
 import { pool } from "./db.js";
 import { HttpError } from "./errors.js";
-import { featuresRouter, insightsRouter } from "./insights.js";
 import { migrate } from "./migrate.js";
 import { problemsRouter } from "./problems.js";
 import { profileRouter } from "./profile.js";
@@ -20,6 +18,9 @@ await migrate();
 const PgStore = connectPgSimple(session);
 const app = express();
 
+app.disable("x-powered-by");
+// The API sits behind Next.js (and Caddy in production), which set X-Forwarded-For. Only the nearest proxy is
+// trusted; never expose this port directly, or clients could pick their own IP for rate limiting.
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "100kb" }));
 app.use(
@@ -42,8 +43,6 @@ app.use("/api/auth", authRouter);
 app.use("/api/problems", problemsRouter);
 app.use("/api/challenges", challengesRouter);
 app.use("/api/activity", activityRouter);
-app.use("/api/insights", insightsRouter);
-app.use("/api/features", featuresRouter);
 app.use("/api/profile", profileRouter);
 
 app.use((_req, _res, next) => next(new HttpError(404, "Not found")));
@@ -63,4 +62,3 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 app.use(errorHandler);
 
 app.listen(config.PORT, () => console.log(`server listening on :${config.PORT}`));
-startAnalyticsSync();

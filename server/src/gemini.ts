@@ -87,7 +87,7 @@ const RETRY_DELAYS_MS = [700, 2000];
 // 429 / 5xx from Gemini ("high demand") are temporary; anything else (bad key, bad request) won't fix itself.
 const isTransient = (err: unknown) => /"code":\s*(429|500|502|503|504)|UNAVAILABLE|RESOURCE_EXHAUSTED/.test(String(err));
 
-/** Plain-text completion, used for AI hints when Snowflake Cortex isn't available. Retries temporary overloads. */
+/** Plain-text completion, used for AI hints. Retries temporary overloads. */
 export async function generateText(prompt: string, temperature = 0.4): Promise<string> {
   for (let attempt = 0; ; attempt++) {
     try {

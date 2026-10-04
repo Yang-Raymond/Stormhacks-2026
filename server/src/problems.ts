@@ -6,8 +6,6 @@ import { requireAuth } from "./auth.js";
 import { type ChallengeKind, periodEndsAt } from "./challenges.js";
 import { pool } from "./db.js";
 import { HttpError } from "./errors.js";
-import { difficulties } from "./gemini.js";
-import { generateVerifiedProblem, generationLimiter, insertProblem } from "./generation.js";
 import { generateHint } from "./hints.js";
 import type { Language, Signature } from "./languages.js";
 import { allPassed, evalAtStep, runTests, traceCode, type RunResult, type TestCase } from "./runner.js";
@@ -25,6 +23,13 @@ const evalBody = debugBody.extend({
   expressions: z.array(expression).min(1).max(20),
 });
 const debugLimiter = rateLimit({ windowMs: 60_000, limit: 240, keyGenerator: (req) => req.session.userId! });
+// Every run/submit starts a sandboxed process (and compiles, for Java/C/C++), so cap how often one user can do it.
+const gradeLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 30,
+  keyGenerator: (req) => req.session.userId!,
+  message: { error: "You're running code very quickly. Wait a moment and try again." },
+});
 const hintLimiter = rateLimit({
   windowMs: 60 * 60_000,
   limit: 10,
@@ -52,6 +57,7 @@ type ProblemRow = {
   challenge_owner: string | null;
   challenge_kind: ChallengeKind | null;
   challenge_period: string | null;
+  is_challenge: boolean;
 };
 
 type LoadedProblem = ProblemRow & { challenge: { kind: ChallengeKind; endsAt: string } | null };
@@ -65,7 +71,7 @@ async function loadProblem(req: Request): Promise<LoadedProblem> {
   const userId = req.session.userId ?? null;
   const { rows } = await pool.query<ProblemRow>(
     `SELECT p.id, p.title, p.description, p.difficulty, p.entry_point, p.buggy_code, p.tests, p.visible_test_count,
-            p.language, p.signature,
+            p.language, p.signature, p.is_challenge,
             EXISTS (SELECT 1 FROM submissions s WHERE s.problem_id = p.id AND s.user_id = $2 AND s.passed) AS solved,
             c.user_id AS challenge_owner, c.kind AS challenge_kind,
             to_char(c.period_start, 'YYYY-MM-DD') AS challenge_period
@@ -74,7 +80,10 @@ async function loadProblem(req: Request): Promise<LoadedProblem> {
     [id, userId],
   );
   const row = rows[0];
-  if (!row || (row.challenge_owner && row.challenge_owner !== userId)) throw new HttpError(404, "Problem not found");
+  // A challenge problem whose challenge row is gone (e.g. its owner was deleted) has no owner left: keep it private.
+  if (!row || (row.is_challenge && (!row.challenge_owner || row.challenge_owner !== userId))) {
+    throw new HttpError(404, "Problem not found");
+  }
   if (!row.challenge_kind || !row.challenge_period) return { ...row, challenge: null };
   const endsAt = periodEndsAt(row.challenge_kind, row.challenge_period);
   if (endsAt.getTime() <= Date.now() && !row.solved) {
@@ -152,13 +161,6 @@ problemsRouter.get("/", async (req, res) => {
   res.json({ problems: rows });
 });
 
-// Practice problems stay Python; challenges choose their language (see challenges.ts).
-problemsRouter.post("/generate", requireAuth, generationLimiter, async (req, res) => {
-  const { difficulty } = z.object({ difficulty: z.enum(difficulties) }).parse(req.body);
-  const problem = await generateVerifiedProblem(difficulty, "python");
-  res.status(201).json({ id: await insertProblem(pool, problem, difficulty, req.session.userId!) });
-});
-
 problemsRouter.get("/:id", async (req, res) => {
   const p = await loadProblem(req);
   if (req.session.userId) {
@@ -178,7 +180,7 @@ problemsRouter.get("/:id", async (req, res) => {
     ? { rows: [{ id: p.id, language: p.language }] }
     : await pool.query<{ id: string; language: Language }>(
         `SELECT DISTINCT ON (p.language) p.id, p.language FROM problems p
-         WHERE p.title = $1 AND NOT EXISTS (SELECT 1 FROM challenges c WHERE c.problem_id = p.id)
+         WHERE p.title = $1 AND NOT p.is_challenge
          ORDER BY p.language, p.id = $2 DESC, p.id`,
         [p.title, p.id],
       );
@@ -217,13 +219,13 @@ problemsRouter.delete("/:id/draft", requireAuth, async (req, res) => {
 });
 
 // Run and Submit grade identically against every test; only Submit records the attempt.
-problemsRouter.post("/:id/run", requireAuth, async (req, res) => {
+problemsRouter.post("/:id/run", requireAuth, gradeLimiter, async (req, res) => {
   const { p, result } = await gradeProblem(req);
   recordEvent({ ...eventOf(req, p, "run"), passed: result.passed, passedCount: result.passedCount, totalCount: result.totalCount });
   res.json(result);
 });
 
-problemsRouter.post("/:id/submit", requireAuth, async (req, res) => {
+problemsRouter.post("/:id/submit", requireAuth, gradeLimiter, async (req, res) => {
   const { p, code, result } = await gradeProblem(req);
   await pool.query(
     `INSERT INTO submissions (user_id, problem_id, code, passed, passed_count, total_count, language)
@@ -251,12 +253,12 @@ problemsRouter.post("/:id/debug/eval", requireAuth, debugLimiter, async (req, re
   res.json(await evalAtStep(code, p.entry_point, args, { ...at, conditions }, p.language, p.signature));
 });
 
-// AI hint (Snowflake Cortex, or Gemini when Cortex isn't available): a nudge about the student's code, never the fix.
+// AI hint from Gemini: a nudge about the student's code, never the fix.
 problemsRouter.post("/:id/hint", requireAuth, hintLimiter, async (req, res) => {
   const p = await loadProblem(req);
   const { code, failing } = hintBody.parse(req.body);
   const { rows } = await pool.query<{ fixed_code: string }>("SELECT fixed_code FROM problems WHERE id = $1", [p.id]);
-  const { hint, provider } = await generateHint({
+  const hint = await generateHint({
     title: p.title,
     description: p.description,
     language: p.language,
@@ -265,5 +267,5 @@ problemsRouter.post("/:id/hint", requireAuth, hintLimiter, async (req, res) => {
     failing,
   });
   recordEvent(eventOf(req, p, "hint"));
-  res.json({ hint, provider });
+  res.json({ hint });
 });

@@ -100,6 +100,17 @@ export function startSession(
 export const authRouter = Router();
 
 authRouter.use(["/register", "/login"], rateLimit({ windowMs: 15 * 60_000, limit: 20 }));
+// Per-account limit on failed logins: holds even if a client rotates IPs or spoofs X-Forwarded-For.
+authRouter.use(
+  "/login",
+  rateLimit({
+    windowMs: 15 * 60_000,
+    limit: 10,
+    skipSuccessfulRequests: true,
+    keyGenerator: (req) => `login:${String(req.body?.email ?? "").trim().toLowerCase()}`,
+    message: { error: "Too many failed attempts for this account. Try again in 15 minutes." },
+  }),
+);
 
 authRouter.get("/providers", (_req, res) => {
   res.json({

@@ -9,7 +9,6 @@ import { api, type User } from "@/lib/api";
 
 const links = [
   { href: "/problems", label: "Problems" },
-  { href: "/insights", label: "Insights" },
 ];
 
 export default function Nav() {

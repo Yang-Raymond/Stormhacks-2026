@@ -27,7 +27,7 @@ import { useDebugger } from "@/hooks/useDebugger";
 import { type SaveStatus, useDraft } from "@/hooks/useDraft";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import HintCard, { type HintState } from "@/components/problem/HintCard";
-import { api, type Features, type Problem, type RunResult, type TestResult } from "@/lib/api";
+import { api, type Problem, type RunResult, type TestResult } from "@/lib/api";
 import { inlineValues } from "@/lib/debugger";
 import { DEBUGGABLE, languageInfo } from "@/lib/languages";
 import { paramNames } from "@/lib/python";
@@ -60,12 +60,8 @@ export default function ProblemPage() {
   const [caseKey, setCaseKey] = useState("case-0");
   const [customValues, setCustomValues] = useState<string[] | null>(null);
   const [confirmingReset, setConfirmingReset] = useState(false);
-  const [features, setFeatures] = useState<Features>({ hints: false, insights: false });
   const [hint, setHint] = useState<HintState | null>(null);
 
-  useEffect(() => {
-    api<Features>("/features").then(setFeatures).catch(() => {});
-  }, []);
   const dbg = useDebugger(id);
   const draft = useDraft(id, code);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -106,20 +102,20 @@ export default function ProblemPage() {
   const debugArgs = caseKey === CUSTOM_CASE ? parsedCustom.args : selectedCase?.args;
   const caseLabel = caseKey === CUSTOM_CASE ? "custom input" : (selectedCase?.label ?? "");
 
-  /** Asks for an AI nudge (Cortex or Gemini); uses the given failing case, or the first one from the last run. */
+  /** Asks Gemini for a nudge; uses the given failing case, or the first one from the last run. */
   async function requestHint(failing?: TestResult) {
     const fromResult = result?.visibleResults.find((r) => !r.passed) ?? result?.hiddenFailure;
     const target = failing ?? fromResult;
     setTab("result");
     setHint({ status: "loading" });
     try {
-      const { hint: text, provider } = await api<{ hint: string; provider: "cortex" | "gemini" }>(`/problems/${id}/hint`, {
+      const { hint: text } = await api<{ hint: string }>(`/problems/${id}/hint`, {
         body: {
           code,
           failing: target && { args: target.args, expected: target.expected, actual: target.actual, error: target.error },
         },
       });
-      setHint({ status: "done", text, provider });
+      setHint({ status: "done", text });
     } catch (e) {
       setHint({ status: "error", message: (e as Error).message });
     }
@@ -280,7 +276,7 @@ export default function ProblemPage() {
               <BugIcon className="size-3.5" /> {dbg.starting ? "Recording…" : "Debug"}
             </ToolbarButton>
           )}
-          {features.hints && !dbg.active && (
+          {!dbg.active && (
             <ToolbarButton
               onClick={() => void requestHint()}
               disabled={hint?.status === "loading"}
@@ -371,7 +367,7 @@ export default function ProblemPage() {
                 pending={pending}
                 params={params}
                 onDebug={canDebug ? (key) => void startDebug(key) : undefined}
-                onHint={features.hints ? (failing) => void requestHint(failing) : undefined}
+                onHint={(failing) => void requestHint(failing)}
               />
             </div>
           </div>
