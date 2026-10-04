@@ -39,7 +39,8 @@ export type EvalResult = {
 };
 export type BreakpointCondition = { line: number; expr: string };
 
-async function callRunner<T>(path: string, body: unknown, timeoutMs = 15_000): Promise<T> {
+// Maximum compilation + execution budget is 30 seconds, plus transport overhead.
+async function callRunner<T>(path: string, body: unknown, timeoutMs = 35_000): Promise<T> {
   let res: Response;
   try {
     res = await fetch(new URL(path, config.RUNNER_URL), {
@@ -71,7 +72,8 @@ export function runTests(
 }
 
 /** Compiling with debug info and stepping under gdb/JDI takes longer than a test run. */
-const TRACE_TIMEOUT_MS = 30_000;
+// Maximum compilation + tracing budget is 32 seconds; allow transport overhead.
+const TRACE_TIMEOUT_MS = 37_000;
 
 /** Records every executed line of one call so the client can step through it like a debugger. */
 export function traceCode(

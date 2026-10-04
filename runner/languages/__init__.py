@@ -59,6 +59,8 @@ def matches(actual, expected):
     if isinstance(actual, bool) or isinstance(expected, bool):
         return type(actual) is type(expected) and actual == expected
     if isinstance(actual, (int, float)) and isinstance(expected, (int, float)):
+        if isinstance(actual, int) and isinstance(expected, int):
+            return actual == expected
         return math.isclose(actual, expected, rel_tol=1e-6, abs_tol=1e-6)
     if isinstance(actual, list) and isinstance(expected, list):
         return len(actual) == len(expected) and all(map(matches, actual, expected))

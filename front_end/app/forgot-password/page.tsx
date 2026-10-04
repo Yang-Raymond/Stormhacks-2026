@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Reset password",
+};
 
 export default function ForgotPasswordPage() {
   return (
@@ -14,7 +19,7 @@ export default function ForgotPasswordPage() {
       </p>
       <div className="mt-6">
         <Link href="/login" className="inline-flex items-center text-sm font-medium text-accent-ink hover:underline">
-          &larr; Back to login
+          &larr; Back to log in
         </Link>
       </div>
     </div>

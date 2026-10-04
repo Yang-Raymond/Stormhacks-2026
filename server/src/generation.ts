@@ -40,7 +40,7 @@ export async function generateVerifiedProblem(difficulty: Difficulty, language: 
     if (await isValidExercise(problem)) return problem;
     console.warn(`generation attempt ${attempt} (${language}) failed verification`);
   }
-  throw new HttpError(502, "Could not generate a valid problem, please try again");
+  throw new HttpError(502, "Could not generate a valid problem. Please try again.");
 }
 
 export async function insertProblem(

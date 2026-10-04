@@ -35,7 +35,7 @@ export default function ProblemDescription({ problem }: { problem: Problem }) {
         </span>
         {problem.solved && (
           <span className="flex items-center gap-1 rounded border border-success-line bg-success-surface px-1.5 py-0.5 font-mono text-[11px] text-easy">
-            <CheckIcon className="size-3" /> solved
+            <CheckIcon className="size-3" /> Solved
           </span>
         )}
       </div>

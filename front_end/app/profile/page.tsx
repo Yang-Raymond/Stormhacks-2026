@@ -19,6 +19,7 @@ import {
   formatMedianDuration,
   relativeDay,
 } from "@/lib/profile";
+import { languageInfo } from "@/lib/languages";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -143,8 +144,8 @@ export default function ProfilePage() {
                     key={l.language}
                     className="flex items-center justify-between text-xs"
                   >
-                    <span className="font-medium text-zinc-200 capitalize">
-                      {l.language}
+                    <span className="font-medium text-zinc-200">
+                      {languageInfo(l.language).label}
                     </span>
                     <span className="font-mono text-zinc-400">
                       {l.solved} solved
@@ -185,7 +186,7 @@ export default function ProfilePage() {
                   {streakDays}
                 </span>
                 <span className="ml-1.5 text-xs font-medium text-zinc-500 sm:text-sm">
-                  {streakDays === 1 ? "day" : "days"} · best {bestStreak}
+                  {streakDays === 1 ? "day" : "days"} · longest {bestStreak} {bestStreak === 1 ? "day" : "days"}
                 </span>
               </div>
             </div>
@@ -330,9 +331,7 @@ export default function ProfilePage() {
                           ) : (
                             <span className="flex items-center gap-1.5 font-medium text-red-400">
                               <XIcon className="size-3.5" />
-                              {sub.passedCount < sub.totalCount
-                                ? `Hidden test failed`
-                                : `Failed`}
+                              Wrong Answer
                             </span>
                           )}
                         </td>

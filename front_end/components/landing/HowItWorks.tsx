@@ -12,14 +12,14 @@ const steps = [
     number: "02",
     title: "Investigate",
     description:
-      "Set breakpoints, step through the code and watch the variables. Use a hint if you get stuck, but it costs points.",
+      "Set breakpoints, step through execution, and watch variables live. Request an AI hint if you get stuck.",
     active: false,
   },
   {
     number: "03",
-    title: "Fix and explain",
+    title: "Fix and verify",
     description:
-      "Submit a fix that passes the hidden tests, and write down the root cause. Then compare your fix with other solutions.",
+      "Submit a fix that passes all hidden tests. Once accepted, review your solution and keep your streak going.",
     active: false,
   },
 ];

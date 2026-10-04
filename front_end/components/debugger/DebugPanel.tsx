@@ -10,7 +10,7 @@ import WatchPanel from "./WatchPanel";
 
 const steps = [
   <>Click in the gutter left of a line number to set a <b className="text-red-400">breakpoint</b>. Right-click it to add a condition.</>,
-  <>Choose the input to debug in the <b className="text-zinc-200">Testcase</b> tab, or write your own.</>,
+  <>Choose the input to debug in the <b className="text-zinc-200">Test cases</b> tab, or write your own.</>,
   <>Press <b className="text-accent-ink">Debug</b> (F5), then step forwards <i>and backwards</i> through every line.</>,
 ];
 

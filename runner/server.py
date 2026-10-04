@@ -6,10 +6,12 @@ Real isolation comes from the container: no network, read-only FS, non-root, cgr
 import json
 import os
 import resource
+import shutil
 import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -28,38 +30,88 @@ MAX_CONDITIONS = 50
 MAX_EXPR_CHARS = 200
 
 
-def limit_resources():
+# User code runs as the same uid as this service, and a child that calls setsid() escapes the killpg cleanup.
+# So jobs run one at a time, and after each one every other process of this uid is killed and scratch space wiped:
+# nothing a submission leaves behind can see or tamper with the next one, or hold pids/tmpfs hostage.
+JOB_LOCK = threading.Lock()
+# Only in the container, where this service is PID 1; run locally, sweeping the uid would kill the developer's processes.
+IN_SANDBOX = os.getpid() == 1
+SCRATCH_DIRS = (tempfile.gettempdir(), "/dev/shm")
+
+
+def sweep():
+    if not IN_SANDBOX:
+        return
+    me, uid = os.getpid(), os.getuid()
+    # Repeat until nothing is left, since a process may fork while we're killing.
+    while True:
+        killed = False
+        for entry in os.listdir("/proc"):
+            if not entry.isdigit() or int(entry) == me:
+                continue
+            try:
+                if os.stat(f"/proc/{entry}").st_uid == uid:
+                    os.kill(int(entry), signal.SIGKILL)
+                    killed = True
+            except (FileNotFoundError, ProcessLookupError, PermissionError):
+                pass
+        if not killed:
+            break
+        try:
+            while os.waitpid(-1, os.WNOHANG)[0]:
+                pass
+        except ChildProcessError:
+            pass
+    for directory in SCRATCH_DIRS:
+        try:
+            names = os.listdir(directory)
+        except OSError:
+            continue
+        for name in names:
+            path = os.path.join(directory, name)
+            if os.path.isdir(path) and not os.path.islink(path):
+                shutil.rmtree(path, ignore_errors=True)
+            else:
+                try:
+                    os.unlink(path)
+                except OSError:
+                    pass
+
+
+def limit_resources(max_output):
     resource.setrlimit(resource.RLIMIT_CPU, (TIMEOUT_SECONDS, TIMEOUT_SECONDS))
     resource.setrlimit(resource.RLIMIT_AS, (256 * 1024 * 1024,) * 2)
-    resource.setrlimit(resource.RLIMIT_FSIZE, (1024 * 1024,) * 2)
+    resource.setrlimit(resource.RLIMIT_FSIZE, (max_output,) * 2)
     resource.setrlimit(resource.RLIMIT_NOFILE, (32, 32))
     os.setsid()
 
 
 def spawn(script, payload, max_output):
     """Runs a script in a resource-limited subprocess; returns (report dict, None) or (None, failure result)."""
-    with tempfile.TemporaryDirectory() as workdir:
+    # File redirection makes RLIMIT_FSIZE effective before any output enters server memory.
+    with tempfile.TemporaryDirectory() as workdir, tempfile.TemporaryFile() as stdout_file, tempfile.TemporaryFile() as stderr_file:
         proc = subprocess.Popen(
             [sys.executable, "-I", "-S", script],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            cwd=workdir,
-            env={},
-            preexec_fn=limit_resources,
+            stdin=subprocess.PIPE, stdout=stdout_file, stderr=stderr_file,
+            text=True, cwd=workdir, env={},
+            preexec_fn=lambda: limit_resources(max_output),
         )
         try:
-            stdout, stderr = proc.communicate(json.dumps(payload), timeout=TIMEOUT_SECONDS)
+            proc.communicate(json.dumps(payload), timeout=TIMEOUT_SECONDS)
         except subprocess.TimeoutExpired:
             return None, {"status": "timeout"}
         finally:
-            # The script runs in its own session; kill the whole group so forked children can't linger.
+            # Kill the whole session so forked children cannot linger.
             try:
                 os.killpg(proc.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
             proc.wait()
+        stdout_file.seek(0)
+        stdout = stdout_file.read(max_output).decode(errors="replace")
+        stderr_file.seek(0, os.SEEK_END)
+        stderr_file.seek(max(0, stderr_file.tell() - 2000))
+        stderr = stderr_file.read(2000).decode(errors="replace")
 
     try:
         return json.loads(stdout[:max_output]), None
@@ -75,14 +127,22 @@ def run(payload):
     code, entry_point, tests = payload["code"], payload["entry_point"], payload["tests"]
     if language != "python":
         return languages.run_tests(languages.BUILDERS[language], code, entry_point, payload.get("signature"), tests)
-    report, failure = spawn(HARNESS, {"code": code, "entry_point": entry_point, "tests": tests}, MAX_OUTPUT_BYTES)
+    args = [t["args"] for t in tests]
+    report, failure = spawn(HARNESS, {"code": code, "entry_point": entry_point, "args": args}, MAX_OUTPUT_BYTES)
     if failure:
         return {**failure, "results": []}
     if "error" in report:
         return {"status": "error", "error": report["error"], "results": []}
     if len(report.get("results", [])) != len(tests):
         return {"status": "error", "error": "test harness produced an incomplete report", "results": []}
-    return {"status": "ok", "results": report["results"]}
+    return {"status": "ok", "results": [grade(test, item) for test, item in zip(tests, report["results"])]}
+
+
+def grade(test, item):
+    if isinstance(item, dict) and "value" in item:
+        return {"passed": languages.matches(item["value"], test["expected"]), "actual": languages.short(item["value"])}
+    error = item.get("error") if isinstance(item, dict) else None
+    return {"passed": False, "error": str(error or "no result")[:languages.MAX_REPR]}
 
 
 def trace(payload):
@@ -187,7 +247,11 @@ class Handler(BaseHTTPRequestHandler):
         if not validator(payload):
             return self._send(400, {"error": f"invalid payload for {self.path}"})
         try:
-            result = handler(payload)
+            with JOB_LOCK:
+                try:
+                    result = handler(payload)
+                finally:
+                    sweep()
         except Exception:
             traceback.print_exc()
             return self._send(500, {"error": "the runner failed to execute this request"})
