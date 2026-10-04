@@ -1,26 +1,100 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Palette shared with the auth pages. */
+@theme {
+  --color-canvas: #0d0e12;
+  --color-canvas-2: #0a0b0e;
+  --color-surface: #14161b;
+  --color-surface-2: #1a1d23;
+  --color-line: #1f2229;
+  --color-line-strong: #2b2f38;
+  --color-accent: #f2b544;
+  --color-accent-hover: #e5a83b;
+  --color-easy: #4ade80;
+  --color-medium: #f2b544;
+  --color-hard: #f87171;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: #e4e4e7;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2b2f38 transparent;
+}
+
+/* Problem statement: code inside fenced blocks shouldn't get the inline-code pill. */
+.problem-prose pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+/* Debugger decorations rendered by Monaco (class names are referenced from CodeEditor). */
+.bp-glyph,
+.bp-glyph-disabled,
+.bp-glyph-conditional,
+.bp-glyph-preview {
+  cursor: pointer;
+}
+.bp-glyph::before,
+.bp-glyph-disabled::before,
+.bp-glyph-conditional::before,
+.bp-glyph-preview::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+}
+.bp-glyph::before {
+  background: #ef4444;
+  box-shadow: 0 0 0 2px rgb(239 68 68 / 0.2);
+}
+.bp-glyph-conditional::before {
+  background: #ef4444;
+  box-shadow: inset 0 0 0 3px #ef4444, inset 0 0 0 5px #14161b;
+}
+.bp-glyph-disabled::before {
+  border: 1.5px solid #71717a;
+}
+.bp-glyph-preview::before {
+  background: rgb(239 68 68 / 0.35);
+}
+.debug-current-line {
+  background: rgb(242 181 68 / 0.13);
+  box-shadow: inset 2px 0 0 #f2b544;
+}
+.debug-exception-line {
+  background: rgb(248 113 113 / 0.14);
+  box-shadow: inset 2px 0 0 #f87171;
+}
+.debug-frame-line {
+  background: rgb(74 222 128 / 0.09);
+}
+.debug-current-arrow::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left: 7px solid #f2b544;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+.debug-inline-value {
+  color: #a1a1aa;
+  font-style: italic;
+  opacity: 0.85;
 }

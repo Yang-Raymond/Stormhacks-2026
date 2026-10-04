@@ -1,9 +1,10 @@
 import OnboardingGuard from "@/components/OnboardingGuard";
 
+// Pages set their own padding: the list is a centered column, the workspace is full-bleed.
 export default function ProblemsLayout({ children }: { children: React.ReactNode }) {
   return (
     <OnboardingGuard>
-      <div className="p-6 flex-1 flex flex-col">{children}</div>
+      <div className="flex flex-1 flex-col">{children}</div>
     </OnboardingGuard>
   );
 }

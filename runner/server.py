@@ -12,11 +12,17 @@ import sys
 import tempfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-HARNESS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "harness.py")
+HERE = os.path.dirname(os.path.abspath(__file__))
+HARNESS = os.path.join(HERE, "harness.py")
+TRACER = os.path.join(HERE, "tracer.py")
 TIMEOUT_SECONDS = 5
 MAX_BODY_BYTES = 256 * 1024
 MAX_OUTPUT_BYTES = 256 * 1024
+MAX_TRACE_OUTPUT_BYTES = 4 * 1024 * 1024
 MAX_TESTS = 100
+MAX_EXPRESSIONS = 20
+MAX_CONDITIONS = 50
+MAX_EXPR_CHARS = 200
 
 
 def limit_resources():
@@ -27,10 +33,11 @@ def limit_resources():
     os.setsid()
 
 
-def run(code, entry_point, tests):
+def spawn(script, payload, max_output):
+    """Runs a script in a resource-limited subprocess; returns (report dict, None) or (None, failure result)."""
     with tempfile.TemporaryDirectory() as workdir:
         proc = subprocess.Popen(
-            [sys.executable, "-I", "-S", HARNESS],
+            [sys.executable, "-I", "-S", script],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -40,13 +47,11 @@ def run(code, entry_point, tests):
             preexec_fn=limit_resources,
         )
         try:
-            stdout, stderr = proc.communicate(
-                json.dumps({"code": code, "entry_point": entry_point, "tests": tests}), timeout=TIMEOUT_SECONDS
-            )
+            stdout, stderr = proc.communicate(json.dumps(payload), timeout=TIMEOUT_SECONDS)
         except subprocess.TimeoutExpired:
-            return {"status": "timeout", "results": []}
+            return None, {"status": "timeout"}
         finally:
-            # The harness runs in its own session; kill the whole group so forked children can't linger.
+            # The script runs in its own session; kill the whole group so forked children can't linger.
             try:
                 os.killpg(proc.pid, signal.SIGKILL)
             except ProcessLookupError:
@@ -54,16 +59,30 @@ def run(code, entry_point, tests):
             proc.wait()
 
     try:
-        report = json.loads(stdout[:MAX_OUTPUT_BYTES])
+        return json.loads(stdout[:max_output]), None
     except json.JSONDecodeError:
-        stderr = stderr[-2000:] or f"process exited with code {proc.returncode}"
-        return {"status": "error", "error": stderr, "results": []}
+        # Hitting the CPU rlimit kills the process before the wall-clock timeout; report it the same way.
+        if proc.returncode in (-signal.SIGXCPU, -signal.SIGKILL):
+            return None, {"status": "timeout"}
+        return None, {"status": "error", "error": stderr[-2000:] or f"process exited with code {proc.returncode}"}
 
+
+def run(code, entry_point, tests):
+    report, failure = spawn(HARNESS, {"code": code, "entry_point": entry_point, "tests": tests}, MAX_OUTPUT_BYTES)
+    if failure:
+        return {**failure, "results": []}
     if "error" in report:
         return {"status": "error", "error": report["error"], "results": []}
     if len(report.get("results", [])) != len(tests):
         return {"status": "error", "error": "test harness produced an incomplete report", "results": []}
     return {"status": "ok", "results": report["results"]}
+
+
+def trace(payload):
+    report, failure = spawn(TRACER, payload, MAX_TRACE_OUTPUT_BYTES)
+    if failure:
+        return {**failure, "steps": []}
+    return {"status": "ok", **report}
 
 
 def valid(payload):
@@ -75,6 +94,41 @@ def valid(payload):
         and isinstance(payload.get("tests"), list)
         and len(payload["tests"]) <= MAX_TESTS
         and all(isinstance(t, dict) and isinstance(t.get("args"), list) and "expected" in t for t in payload["tests"])
+    )
+
+
+def short_str(value):
+    return isinstance(value, str) and len(value) <= MAX_EXPR_CHARS
+
+
+def non_negative_int(value):
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def valid_trace(payload):
+    if not (
+        isinstance(payload, dict)
+        and isinstance(payload.get("code"), str)
+        and isinstance(payload.get("entry_point"), str)
+        and payload["entry_point"].isidentifier()
+        and isinstance(payload.get("args"), list)
+    ):
+        return False
+    conditions = payload.get("conditions", [])
+    if not (
+        isinstance(conditions, list)
+        and len(conditions) <= MAX_CONDITIONS
+        and all(isinstance(c, dict) and non_negative_int(c.get("line")) and short_str(c.get("expr")) for c in conditions)
+    ):
+        return False
+    ev = payload.get("eval")
+    return ev is None or (
+        isinstance(ev, dict)
+        and non_negative_int(ev.get("step"))
+        and non_negative_int(ev.get("frame"))
+        and isinstance(ev.get("expressions"), list)
+        and 0 < len(ev["expressions"]) <= MAX_EXPRESSIONS
+        and all(short_str(e) for e in ev["expressions"])
     )
 
 
@@ -94,8 +148,10 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, {"error": "not found"})
 
     def do_POST(self):
-        if self.path != "/run":
+        routes = {"/run": (valid, lambda p: run(p["code"], p["entry_point"], p["tests"])), "/trace": (valid_trace, trace)}
+        if self.path not in routes:
             return self._send(404, {"error": "not found"})
+        validator, handler = routes[self.path]
         length = int(self.headers.get("Content-Length") or 0)
         if length <= 0 or length > MAX_BODY_BYTES:
             return self._send(413, {"error": "invalid body size"})
@@ -103,10 +159,9 @@ class Handler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(length))
         except json.JSONDecodeError:
             return self._send(400, {"error": "invalid json"})
-        if not valid(payload):
-            return self._send(400, {"error": "expected {code, entry_point, tests:[{args, expected}]}"})
-        self._send(200, run(payload["code"], payload["entry_point"], payload["tests"]))
-
+        if not validator(payload):
+            return self._send(400, {"error": f"invalid payload for {self.path}"})
+        self._send(200, handler(payload))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8000"))

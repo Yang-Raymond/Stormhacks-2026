@@ -1,17 +1,28 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
 import { requireAuth } from "./auth.js";
 import { pool } from "./db.js";
 import { HttpError } from "./errors.js";
 import { difficulties, generateProblem, type GeneratedProblem } from "./gemini.js";
-import { allPassed, runTests, type RunResult, type TestCase } from "./runner.js";
+import { allPassed, evalAtStep, runTests, traceCode, type RunResult, type TestCase } from "./runner.js";
 
 const VISIBLE_TESTS = 2;
 const GENERATION_ATTEMPTS = 3;
 
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 const codeBody = z.object({ code: z.string().max(20_000) });
+const expression = z.string().trim().min(1).max(200);
+const debugBody = codeBody.extend({
+  args: z.array(z.unknown()).max(20),
+  conditions: z.array(z.object({ line: z.number().int().positive(), expr: expression })).max(50).default([]),
+});
+const evalBody = debugBody.extend({
+  step: z.number().int().min(0),
+  frame: z.number().int().min(0),
+  expressions: z.array(expression).min(1).max(20),
+});
+const debugLimiter = rateLimit({ windowMs: 60_000, limit: 240, keyGenerator: (req) => req.session.userId! });
 
 type ProblemRow = {
   id: string;
@@ -35,16 +46,44 @@ async function loadProblem(rawId: unknown): Promise<ProblemRow> {
   return rows[0];
 }
 
-/** Only visible tests and their per-test details ever leave the server; hidden tests stay secret. */
+/**
+ * Grades against every test. Visible tests are always shown in full; of the hidden tests only the
+ * first failing one is revealed (LeetCode-style) so there's something to debug without leaking the whole set.
+ */
 function publicResults(run: RunResult, problem: ProblemRow) {
-  const visible = problem.tests.slice(0, problem.visible_test_count);
+  const total = problem.tests.length;
+  // A compile error or timeout yields no per-test results, so every test counts as failed.
+  const results = problem.tests.map((t, i) => ({ ...t, ...(run.results[i] ?? { passed: false }) }));
+  const failedHidden = results
+    .map((r, i) => ({ ...r, testNumber: i + 1 }))
+    .slice(problem.visible_test_count)
+    .filter((r) => !r.passed);
   return {
     status: run.status,
     error: run.error,
-    passedCount: run.results.filter((r) => r.passed).length,
-    totalCount: run.results.length,
-    visibleResults: run.results.slice(0, visible.length).map((r, i) => ({ ...visible[i], ...r })),
+    passed: allPassed(run, total),
+    passedCount: results.filter((r) => r.passed).length,
+    totalCount: total,
+    visibleResults: results.slice(0, problem.visible_test_count),
+    hiddenFailure: run.status === "ok" ? failedHidden[0] : undefined,
+    hiddenFailureCount: failedHidden.length,
   };
+}
+
+function saveDraft(userId: string, problemId: string, code: string) {
+  return pool.query(
+    `INSERT INTO drafts (user_id, problem_id, code) VALUES ($1, $2, $3)
+     ON CONFLICT (user_id, problem_id) DO UPDATE SET code = EXCLUDED.code, updated_at = now()`,
+    [userId, problemId, code],
+  );
+}
+
+async function gradeProblem(req: Request) {
+  const p = await loadProblem(req.params.id);
+  const { code } = codeBody.parse(req.body);
+  // Whatever was run or submitted is the user's latest work, even if an autosave never landed.
+  const [run] = await Promise.all([runTests(code, p.entry_point, p.tests), saveDraft(req.session.userId!, p.id, code)]);
+  return { p, code, result: publicResults(run, p) };
 }
 
 /** A generated problem is only usable if the reference solution passes every test and the buggy one doesn't. */
@@ -112,8 +151,15 @@ problemsRouter.post(
 
 problemsRouter.get("/:id", async (req, res) => {
   const p = await loadProblem(req.params.id);
+  const { rows } = await pool.query<{ solved: boolean; saved_code: string | null }>(
+    `SELECT EXISTS (SELECT 1 FROM submissions WHERE problem_id = $1 AND user_id = $2 AND passed) AS solved,
+            (SELECT code FROM drafts WHERE problem_id = $1 AND user_id = $2) AS saved_code`,
+    [p.id, req.session.userId ?? null],
+  );
   res.json({
     problem: {
+      solved: rows[0].solved,
+      savedCode: rows[0].saved_code,
       id: p.id,
       title: p.title,
       description: p.description,
@@ -126,24 +172,46 @@ problemsRouter.get("/:id", async (req, res) => {
   });
 });
 
-problemsRouter.post("/:id/run", requireAuth, async (req, res) => {
+problemsRouter.put("/:id/draft", requireAuth, async (req, res) => {
   const p = await loadProblem(req.params.id);
   const { code } = codeBody.parse(req.body);
-  const visible = p.tests.slice(0, p.visible_test_count);
-  const run = await runTests(code, p.entry_point, visible);
-  res.json(publicResults(run, p));
+  await saveDraft(req.session.userId!, p.id, code);
+  res.status(204).end();
+});
+
+/** Resetting discards the draft, so the problem opens with the original buggy code again. */
+problemsRouter.delete("/:id/draft", requireAuth, async (req, res) => {
+  const { id } = idParam.parse(req.params);
+  await pool.query("DELETE FROM drafts WHERE user_id = $1 AND problem_id = $2", [req.session.userId, id]);
+  res.status(204).end();
+});
+
+// Run and Submit grade identically against every test; only Submit records the attempt.
+problemsRouter.post("/:id/run", requireAuth, async (req, res) => {
+  const { result } = await gradeProblem(req);
+  res.json(result);
 });
 
 problemsRouter.post("/:id/submit", requireAuth, async (req, res) => {
-  const p = await loadProblem(req.params.id);
-  const { code } = codeBody.parse(req.body);
-  const run = await runTests(code, p.entry_point, p.tests);
-  const result = publicResults(run, p);
-  const passed = allPassed(run, p.tests.length);
+  const { p, code, result } = await gradeProblem(req);
   await pool.query(
     `INSERT INTO submissions (user_id, problem_id, code, passed, passed_count, total_count)
      VALUES ($1, $2, $3, $4, $5, $6)`,
-    [req.session.userId, p.id, code, passed, result.passedCount, p.tests.length],
+    [req.session.userId, p.id, code, result.passed, result.passedCount, result.totalCount],
   );
-  res.json({ ...result, totalCount: p.tests.length, passed });
+  res.json(result);
+});
+
+// Debug args come from the client (an example, the revealed hidden failure, or custom input),
+// so these endpoints never expose hidden test data.
+problemsRouter.post("/:id/debug", requireAuth, debugLimiter, async (req, res) => {
+  const p = await loadProblem(req.params.id);
+  const { code, args, conditions } = debugBody.parse(req.body);
+  res.json(await traceCode(code, p.entry_point, args, conditions));
+});
+
+problemsRouter.post("/:id/debug/eval", requireAuth, debugLimiter, async (req, res) => {
+  const p = await loadProblem(req.params.id);
+  const { code, args, conditions, ...at } = evalBody.parse(req.body);
+  res.json(await evalAtStep(code, p.entry_point, args, { ...at, conditions }));
 });
