@@ -86,6 +86,10 @@ def run(payload):
 
 
 def trace(payload):
+    language = payload.get("language", "python")
+    if language != "python":
+        spec = {k: payload[k] for k in ("args", "conditions", "eval") if k in payload}
+        return languages.trace(languages.TRACERS[language], payload["code"], payload["entry_point"], payload.get("signature"), spec)
     report, failure = spawn(TRACER, payload, MAX_TRACE_OUTPUT_BYTES)
     if failure:
         return {**failure, "steps": []}
@@ -131,6 +135,8 @@ def valid_trace(payload):
         and isinstance(payload.get("entry_point"), str)
         and payload["entry_point"].isidentifier()
         and isinstance(payload.get("args"), list)
+        and payload.get("language", "python") in languages.DEBUGGABLE
+        and (payload.get("language") not in languages.NEEDS_SIGNATURE or valid_signature(payload.get("signature")))
     ):
         return False
     conditions = payload.get("conditions", [])

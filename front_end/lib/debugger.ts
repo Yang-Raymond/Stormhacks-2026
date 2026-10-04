@@ -7,7 +7,7 @@ import type { TraceStep } from "./api";
 export type Breakpoint = {
   line: number;
   enabled: boolean;
-  /** Python expression; the breakpoint only pauses when it is truthy. */
+  /** Expression in the problem's language; the breakpoint only pauses when it is truthy. */
   condition?: string;
   /** Only pause from the Nth time this line is hit. */
   hitCount?: number;
@@ -101,7 +101,12 @@ const MAX_INLINE_VALUE = 40;
  * Values to show at the end of lines already executed in the current call, like VS Code's inline values:
  * for each such line, the current value of every local it mentions.
  */
-export function inlineValues(steps: TraceStep[], index: number, lineText: (line: number) => string) {
+export function inlineValues(
+  steps: TraceStep[],
+  index: number,
+  lineText: (line: number) => string,
+  lineComment: RegExp = /#.*/,
+) {
   const step = steps[index];
   const frame = step?.frames[0];
   if (!frame) return [];
@@ -112,7 +117,7 @@ export function inlineValues(steps: TraceStep[], index: number, lineText: (line:
     if (s.depth === step.depth && s.frames[0]?.name === frame.name) lines.add(s.line);
   }
   return [...lines].flatMap((line) => {
-    const names = [...new Set(lineText(line).replace(/#.*/, "").match(IDENTIFIER) ?? [])].filter(
+    const names = [...new Set(lineText(line).replace(lineComment, "").match(IDENTIFIER) ?? [])].filter(
       (n) => n in frame.locals,
     );
     if (!names.length) return [];

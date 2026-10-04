@@ -7,7 +7,7 @@ import ChallengesSection from "@/components/challenges/ChallengesSection";
 import DifficultyBadge from "@/components/ui/DifficultyBadge";
 import { CheckIcon, ChevronRightIcon, SearchIcon, SparklesIcon } from "@/components/ui/icons";
 import { api, type Difficulty, type MeResponse, type ProblemSummary } from "@/lib/api";
-import { LANGUAGES, type Language, languageInfo } from "@/lib/languages";
+import { LANGUAGES, type Language, languageInfo, preferredLanguage } from "@/lib/languages";
 
 const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard"];
 const STATUSES = ["all", "unsolved", "solved"] as const;
@@ -44,22 +44,20 @@ export default function ProblemsPage() {
   const [preferred, setPreferred] = useState<Language>("python");
 
   useEffect(() => {
-    api<{ problems: ProblemSummary[] }>("/problems")
-      .then((d) => setProblems(d.problems))
+    // Resolve the preference before exposing problem links so a slow profile request cannot
+    // send the first click to the fallback language.
+    Promise.all([
+      api<{ problems: ProblemSummary[] }>("/problems"),
+      api<MeResponse>("/auth/me").catch(() => null),
+    ])
+      .then(([data, me]) => {
+        setPreferred(preferredLanguage(me?.user?.debugLanguages));
+        setProblems(data.problems);
+      })
       .catch((e: Error) => {
         setError(e.message);
         setProblems([]);
       });
-
-    api<MeResponse>("/auth/me")
-      .then((res) => {
-        const pref = res.user?.debugLanguages?.[0];
-        if (pref && LANGUAGES.some((l) => l.id === pref)) {
-          setLanguageFilter(pref as Language);
-          setPreferred(pref as Language);
-        }
-      })
-      .catch(() => {});
   }, []);
 
   // Each language version of a problem is its own row sharing the title; list each problem once and open

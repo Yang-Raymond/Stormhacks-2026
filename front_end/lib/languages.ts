@@ -15,5 +15,15 @@ export function languageInfo(id: string) {
   return LANGUAGES.find((l) => l.id === id) ?? LANGUAGES[0];
 }
 
-/** The time-travel debugger relies on Python's tracing hooks. */
-export const DEBUGGABLE: ReadonlySet<string> = new Set(["python"]);
+/** Languages the runner can trace for the time-travel debugger; matches server/src/problems.ts. */
+export const DEBUGGABLE: ReadonlySet<string> = new Set(["python", "javascript", "typescript"]);
+
+/** Read current ids and legacy display-name preferences; use the first supported selection. */
+export function preferredLanguage(names: readonly string[] = []): Language {
+  for (const name of names) {
+    const normalized = name.toLowerCase();
+    const match = LANGUAGES.find((l) => l.id === normalized || l.label.toLowerCase() === normalized);
+    if (match) return match.id;
+  }
+  return "python";
+}

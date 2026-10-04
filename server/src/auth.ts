@@ -1,6 +1,7 @@
 import { Router, type RequestHandler } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
+import { preferredLanguagesSchema } from "./languages.js";
 import { config } from "./config.js";
 import { pool } from "./db.js";
 import { HttpError } from "./errors.js";
@@ -12,14 +13,6 @@ export const ROLES = [
   "Data scientist",
   "QA / test engineer",
   "Engineering manager",
-  "Other",
-] as const;
-
-export const LANGS = [
-  "Python",
-  "TypeScript",
-  "JavaScript",
-  "Go",
   "Other",
 ] as const;
 
@@ -38,7 +31,7 @@ const loginSchema = z.object({
 const onboardingSchema = z.object({
   fullName: z.string().trim().min(1, "Display name is required").max(100),
   role: z.enum(ROLES, { message: "Please select a valid role" }),
-  languages: z.array(z.enum(LANGS)).min(1, "Pick at least one language"),
+  languages: preferredLanguagesSchema,
   acceptTerms: z.literal(true, {
     message: "You must accept the terms of service to continue",
   }),
@@ -47,7 +40,7 @@ const onboardingSchema = z.object({
 const profileSchema = z.object({
   fullName: z.string().trim().min(1, "Display name is required").max(100),
   role: z.enum(ROLES, { message: "Please select a valid role" }),
-  languages: z.array(z.enum(LANGS)).min(1, "Pick at least one language"),
+  languages: preferredLanguagesSchema,
 });
 
 export type UserRow = {

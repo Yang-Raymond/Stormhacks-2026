@@ -5,6 +5,9 @@ command and a run command. The program reads a nonce line and then a JSON list o
 solution once per test, and prints `<nonce><report><nonce>` last on stdout. The report is a list with
 `{"value": <json>}` or `{"error": "..."}` per test, or `{"error": "..."}` if the solution couldn't be loaded.
 The nonce means nothing the solution prints can pass for a report. Comparison with expected values happens here.
+
+Debuggable languages also have a tracer `Program`: it reads the nonce line and then the trace spec as JSON (args,
+conditions, optional eval) and prints `<nonce><report><nonce>`, where the report has the same shape tracer.py's has.
 """
 import json
 import math
@@ -125,10 +128,53 @@ def run_tests(build, code, entry_point, signature, tests):
     return {"status": "ok", "results": results}
 
 
+def trace(build, code, entry_point, signature, spec):
+    """Compiles (if needed) and traces one call; returns {status, error?, steps, ...} like tracer.py."""
+    try:
+        program = build(code, entry_point, signature)
+    except UnsupportedSignature as exc:
+        return {"status": "error", "error": str(exc), "steps": []}
+
+    with tempfile.TemporaryDirectory() as workdir:
+        for name, content in program.files.items():
+            with open(os.path.join(workdir, name), "w", encoding="utf-8") as f:
+                f.write(content)
+
+        if program.compile:
+            compiled = run(program.compile, cwd=workdir, limits=program.compile_limits, env=program.env)
+            if compiled.timed_out:
+                return {"status": "error", "error": "Compilation timed out", "steps": []}
+            if compiled.returncode != 0:
+                return {"status": "error", "error": tidy(compiled.output, workdir) or "Compilation failed", "steps": []}
+
+        nonce = secrets.token_hex(16)
+        stdout_path = os.path.join(workdir, ".stdout")
+        stderr_path = os.path.join(workdir, ".stderr")
+        outcome = run(
+            program.run,
+            cwd=workdir,
+            limits=program.run_limits,
+            env=program.env,
+            stdin_text=nonce + "\n" + json.dumps(spec),
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+        )
+        if outcome.timed_out:
+            return {"status": "timeout", "steps": []}
+        with open(stdout_path, encoding="utf-8", errors="replace") as f:
+            report = extract_report(f.read(), nonce)
+        if not isinstance(report, dict):
+            with open(stderr_path, encoding="utf-8", errors="replace") as f:
+                stderr = tidy(f.read()[-2000:], workdir)
+            message = describe_exit(outcome.returncode) if outcome.returncode != 0 else "The tracer produced no report"
+            return {"status": "error", "error": f"{message}\n{stderr}".strip(), "steps": []}
+    return {"status": "ok", **report}
+
+
 def _registry():
     from . import c, cpp, csharp, java, node
 
-    return {
+    builders = {
         "javascript": node.build_javascript,
         "typescript": node.build_typescript,
         "java": java.build,
@@ -136,9 +182,15 @@ def _registry():
         "cpp": cpp.build,
         "c": c.build,
     }
+    tracers = {
+        "javascript": node.trace_javascript,
+        "typescript": node.trace_typescript,
+    }
+    return builders, tracers
 
 
-BUILDERS = _registry()
+BUILDERS, TRACERS = _registry()
 # Statically typed languages need the signature to convert JSON arguments into native values.
 NEEDS_SIGNATURE = {"java", "csharp", "cpp", "c"}
 LANGUAGES = {"python", *BUILDERS}
+DEBUGGABLE = {"python", *TRACERS}
