@@ -35,9 +35,17 @@ OAuth callback URLs to configure in GitHub & Google Developer consoles:
 
 `server/` is bind-mounted, so edits hot-reload. After changing `server/package.json`, rebuild: `docker compose up --build server`.
 
-Migrations in `server/migrations/*.sql` run automatically on server start (tracked in `schema_migrations`). Add new ones as `003_*.sql`, never edit an applied one.
+Migrations in `server/migrations/*.sql` run automatically on server start (tracked in `schema_migrations`). Add new ones with the next free number, never edit an applied one. A file starting with `-- migrate:no-transaction` runs statement by statement (needed for TimescaleDB continuous aggregates).
 
 To use Tiger Data cloud instead of the local db, set `DATABASE_URL` in `.env` (with `?sslmode=require`).
+
+## Sponsor integrations
+
+- **Tiger Data**: activity events live in a TimescaleDB hypertable with a continuous aggregate behind the streaks and heatmap.
+- **Snowflake**: Cortex powers AI hints, and a warehouse fed by a background sync powers `/insights`. Both are optional.
+- **.tech**: the domain for the deployed app.
+
+Setup steps and what to demo: [docs/integrations.md](docs/integrations.md).
 
 ## API
 
@@ -58,6 +66,10 @@ All bodies are JSON. Auth uses an httpOnly session cookie (`sid`).
 | POST | `/api/problems/generate` | ✓ | `{difficulty: "easy"\|"medium"\|"hard"}` → `{id}`; takes ~10–30s |
 | POST | `/api/problems/:id/run` | ✓ | `{code}` → runs example tests only |
 | POST | `/api/problems/:id/submit` | ✓ | `{code}` → runs all tests, records submission |
+| POST | `/api/problems/:id/hint` | ✓ | `{code, failing?}` → `{hint}` from Snowflake Cortex (10/hour) |
+| GET  | `/api/activity/me` | ✓ | streaks + 26-week daily activity (Tiger Data continuous aggregate) |
+| GET  | `/api/insights` | | site-wide stats from Snowflake, or `{configured: false}` |
+| GET  | `/api/features` | | `{hints, insights}`: which optional integrations are on |
 
 Run/submit response: `{status: "ok"|"error"|"timeout", error?, passedCount, totalCount, visibleResults: [{args, expected, passed, actual?, error?}], passed? }`.
 

@@ -13,6 +13,16 @@ const schema = z.object({
   GITHUB_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  // Snowflake (optional): AI hints via Cortex and the analytics warehouse. See docs/integrations.md.
+  SNOWFLAKE_ACCOUNT: z.string().optional(), // account identifier, e.g. "myorg-myaccount"
+  SNOWFLAKE_TOKEN: z.string().optional(), // programmatic access token
+  SNOWFLAKE_WAREHOUSE: z.string().default("LADYBUG_WH"),
+  SNOWFLAKE_DATABASE: z.string().default("LADYBUG"),
+  SNOWFLAKE_SCHEMA: z.string().default("ANALYTICS"),
+  SNOWFLAKE_ROLE: z.string().default("LADYBUG_APP"),
+  SNOWFLAKE_CORTEX_MODEL: z.string().default("mistral-large2"),
+  // Salt for the one-way user ids sent to the warehouse; required for the sync to run.
+  ANALYTICS_SALT: z.preprocess((v) => (v === "" ? undefined : v), z.string().min(16).optional()),
 });
 
 const parsed = schema.safeParse(process.env);

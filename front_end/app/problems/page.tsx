@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import ActivityPanel from "@/components/activity/ActivityPanel";
 import ChallengesSection from "@/components/challenges/ChallengesSection";
 import DifficultyBadge from "@/components/ui/DifficultyBadge";
-import GenerationProgress from "@/components/ui/GenerationProgress";
 import { CheckIcon, ChevronRightIcon, SearchIcon, SparklesIcon } from "@/components/ui/icons";
 import { api, type Difficulty, type MeResponse, type ProblemSummary } from "@/lib/api";
 import { LANGUAGES, type Language, languageInfo } from "@/lib/languages";
@@ -36,10 +35,7 @@ function relativeTime(iso: string) {
 }
 
 export default function ProblemsPage() {
-  const router = useRouter();
   const [problems, setProblems] = useState<ProblemSummary[] | null>(null);
-  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
-  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | "all">("all");
@@ -63,18 +59,6 @@ export default function ProblemsPage() {
       })
       .catch(() => {});
   }, []);
-
-  async function generate() {
-    setGenerating(true);
-    setError("");
-    try {
-      const { id } = await api<{ id: string }>("/problems/generate", { body: { difficulty } });
-      router.push(`/problems/${id}`);
-    } catch (e) {
-      setError((e as Error).message);
-      setGenerating(false);
-    }
-  }
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -103,6 +87,8 @@ export default function ProblemsPage() {
         </p>
       </header>
 
+      <ActivityPanel />
+
       <ChallengesSection />
 
       <div className="mt-12 flex flex-wrap items-baseline justify-between gap-2 border-t border-line pt-8">
@@ -126,8 +112,6 @@ export default function ProblemsPage() {
           );
         })}
       </section>
-
-      <GenerateCard difficulty={difficulty} onDifficulty={setDifficulty} generating={generating} onGenerate={generate} />
 
       {error && (
         <p role="alert" className="mt-4 rounded-lg border border-red-900/60 bg-red-950/30 px-4 py-3 text-sm text-red-300">
@@ -218,7 +202,7 @@ export default function ProblemsPage() {
             {list.length === 0 ? (
               <>
                 <p className="mt-4 font-medium text-zinc-200">No problems yet</p>
-                <p className="mt-1 text-sm text-zinc-500">Generate your first one above, it takes about 30 seconds.</p>
+                <p className="mt-1 text-sm text-zinc-500">Check back soon, or take on today&apos;s challenge above.</p>
               </>
             ) : (
               <>
@@ -269,57 +253,6 @@ function StatTile({ label, solved, total, barClass, valueClass }: {
         <div className={`h-full rounded-full transition-[width] duration-500 ${barClass}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
-  );
-}
-
-function GenerateCard({ difficulty, onDifficulty, generating, onGenerate }: {
-  difficulty: Difficulty;
-  onDifficulty: (d: Difficulty) => void;
-  generating: boolean;
-  onGenerate: () => void;
-}) {
-  return (
-    <section className="relative mt-6 overflow-hidden rounded-xl border border-line bg-surface">
-      <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-accent/10 blur-3xl" />
-      <div className="relative flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center">
-        <div className="flex-1">
-          <h2 className="flex items-center gap-2 font-semibold text-white">
-            <SparklesIcon className="size-4 text-accent" />
-            Generate a practice problem
-          </h2>
-          <p className="mt-1 text-sm text-zinc-400">
-            A fresh algorithm problem, a buggy solution to fix, and a hidden test suite to prove it.
-          </p>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div role="radiogroup" aria-label="Difficulty" className="flex rounded-lg border border-line bg-canvas-2 p-1">
-            {DIFFICULTIES.map((d) => (
-              <button
-                key={d}
-                role="radio"
-                aria-checked={difficulty === d}
-                disabled={generating}
-                onClick={() => onDifficulty(d)}
-                className={`flex-1 rounded-md px-3.5 py-1.5 text-sm capitalize transition-colors disabled:cursor-not-allowed ${
-                  difficulty === d ? `bg-surface-2 font-medium shadow-sm ${difficultyText[d]}` : "text-zinc-400 hover:text-zinc-200"
-                }`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={onGenerate}
-            disabled={generating}
-            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-accent-hover disabled:cursor-wait disabled:opacity-70"
-          >
-            {generating ? "Generating…" : "Generate problem"}
-          </button>
-        </div>
-      </div>
-
-      {generating && <GenerationProgress className="relative border-t border-line px-5 py-4 sm:px-6" />}
-    </section>
   );
 }
 

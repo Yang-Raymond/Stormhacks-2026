@@ -6,7 +6,10 @@ import { useEffect, useState } from "react";
 import { LogOutIcon } from "@/components/ui/icons";
 import { api, type User } from "@/lib/api";
 
-const links = [{ href: "/problems", label: "Problems" }];
+const links = [
+  { href: "/problems", label: "Problems" },
+  { href: "/insights", label: "Insights" },
+];
 
 export default function Nav() {
   const [user, setUser] = useState<User | null>(null);

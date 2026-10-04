@@ -1,14 +1,17 @@
 import { Router, type Request } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
+import { recordEvent } from "./activity.js";
 import { requireAuth } from "./auth.js";
 import { type ChallengeKind, periodEndsAt } from "./challenges.js";
 import { pool } from "./db.js";
 import { HttpError } from "./errors.js";
 import { difficulties } from "./gemini.js";
 import { generateVerifiedProblem, generationLimiter, insertProblem } from "./generation.js";
+import { generateHint } from "./hints.js";
 import type { Language, Signature } from "./languages.js";
 import { allPassed, evalAtStep, runTests, traceCode, type RunResult, type TestCase } from "./runner.js";
+import { snowflakeEnabled } from "./snowflake.js";
 
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 const codeBody = z.object({ code: z.string().max(20_000) });
@@ -23,6 +26,17 @@ const evalBody = debugBody.extend({
   expressions: z.array(expression).min(1).max(20),
 });
 const debugLimiter = rateLimit({ windowMs: 60_000, limit: 240, keyGenerator: (req) => req.session.userId! });
+const hintLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: 10,
+  keyGenerator: (req) => req.session.userId!,
+  message: { error: "You've used your 10 hints for this hour. Try the debugger in the meantime!" },
+});
+const hintBody = codeBody.extend({
+  failing: z
+    .object({ args: z.array(z.unknown()).max(20), expected: z.unknown(), actual: z.string().max(2000).optional(), error: z.string().max(2000).optional() })
+    .optional(),
+});
 
 type ProblemRow = {
   id: string;
@@ -68,6 +82,10 @@ async function loadProblem(req: Request): Promise<LoadedProblem> {
     throw new HttpError(410, `This ${row.challenge_kind} challenge has expired. Start a new one from the problems page.`);
   }
   return { ...row, challenge: { kind: row.challenge_kind, endsAt: endsAt.toISOString() } };
+}
+
+function eventOf(req: Request, p: LoadedProblem, kind: "run" | "submit" | "debug" | "hint") {
+  return { userId: req.session.userId!, kind, problemId: p.id, language: p.language, difficulty: p.difficulty };
 }
 
 function requirePython(p: LoadedProblem) {
@@ -180,7 +198,8 @@ problemsRouter.delete("/:id/draft", requireAuth, async (req, res) => {
 
 // Run and Submit grade identically against every test; only Submit records the attempt.
 problemsRouter.post("/:id/run", requireAuth, async (req, res) => {
-  const { result } = await gradeProblem(req);
+  const { p, result } = await gradeProblem(req);
+  recordEvent({ ...eventOf(req, p, "run"), passed: result.passed, passedCount: result.passedCount, totalCount: result.totalCount });
   res.json(result);
 });
 
@@ -191,6 +210,7 @@ problemsRouter.post("/:id/submit", requireAuth, async (req, res) => {
      VALUES ($1, $2, $3, $4, $5, $6, $7)`,
     [req.session.userId, p.id, code, result.passed, result.passedCount, result.totalCount, p.language],
   );
+  recordEvent({ ...eventOf(req, p, "submit"), passed: result.passed, passedCount: result.passedCount, totalCount: result.totalCount });
   res.json(result);
 });
 
@@ -200,6 +220,7 @@ problemsRouter.post("/:id/debug", requireAuth, debugLimiter, async (req, res) =>
   const p = await loadProblem(req);
   requirePython(p);
   const { code, args, conditions } = debugBody.parse(req.body);
+  recordEvent(eventOf(req, p, "debug"));
   res.json(await traceCode(code, p.entry_point, args, conditions));
 });
 
@@ -208,4 +229,22 @@ problemsRouter.post("/:id/debug/eval", requireAuth, debugLimiter, async (req, re
   requirePython(p);
   const { code, args, conditions, ...at } = evalBody.parse(req.body);
   res.json(await evalAtStep(code, p.entry_point, args, { ...at, conditions }));
+});
+
+// AI hint from Snowflake Cortex: a nudge about the student's current code, never the fix.
+problemsRouter.post("/:id/hint", requireAuth, hintLimiter, async (req, res) => {
+  if (!snowflakeEnabled) throw new HttpError(503, "Hints aren't configured on this server");
+  const p = await loadProblem(req);
+  const { code, failing } = hintBody.parse(req.body);
+  const { rows } = await pool.query<{ fixed_code: string }>("SELECT fixed_code FROM problems WHERE id = $1", [p.id]);
+  const hint = await generateHint({
+    title: p.title,
+    description: p.description,
+    language: p.language,
+    code,
+    referenceCode: rows[0].fixed_code,
+    failing,
+  });
+  recordEvent(eventOf(req, p, "hint"));
+  res.json({ hint });
 });

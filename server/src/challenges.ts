@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { recordEvent } from "./activity.js";
 import { requireAuth } from "./auth.js";
 import { pool } from "./db.js";
 import { HttpError } from "./errors.js";
@@ -127,6 +128,7 @@ challengesRouter.post("/:kind/start", requireAuth, generationLimiter, async (req
         throw new HttpError(409, `You've already started this ${kind} challenge`);
       }
       await client.query("COMMIT");
+      recordEvent({ userId, kind: "challenge_start", problemId, language, difficulty });
       res.status(201).json({ id: problemId });
     } catch (err) {
       await client.query("ROLLBACK").catch(() => {});
