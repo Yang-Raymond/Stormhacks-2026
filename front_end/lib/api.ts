@@ -43,6 +43,8 @@ export type Problem = {
   /** Typed parameters/return, present on problems generated with language support. */
   signature: Signature | null;
   challenge: { kind: ChallengeKind; endsAt: string } | null;
+  /** This problem in each available language (including this one). */
+  variants: { id: string; language: string }[];
 };
 
 export type ChallengeSummary = {

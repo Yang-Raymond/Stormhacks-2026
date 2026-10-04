@@ -163,6 +163,15 @@ problemsRouter.get("/:id", async (req, res) => {
     "SELECT code AS saved_code FROM drafts WHERE problem_id = $1 AND user_id = $2",
     [p.id, req.session.userId ?? null],
   );
+  // The same problem in other languages is a separate row sharing the title. Challenges are personal, so they have none.
+  const { rows: variants } = p.challenge
+    ? { rows: [{ id: p.id, language: p.language }] }
+    : await pool.query<{ id: string; language: Language }>(
+        `SELECT DISTINCT ON (p.language) p.id, p.language FROM problems p
+         WHERE p.title = $1 AND NOT EXISTS (SELECT 1 FROM challenges c WHERE c.problem_id = p.id)
+         ORDER BY p.language, p.id = $2 DESC, p.id`,
+        [p.title, p.id],
+      );
   res.json({
     problem: {
       solved: p.solved,
@@ -178,6 +187,7 @@ problemsRouter.get("/:id", async (req, res) => {
       buggyCode: p.buggy_code,
       examples: p.tests.slice(0, p.visible_test_count),
       totalTests: p.tests.length,
+      variants,
     },
   });
 });

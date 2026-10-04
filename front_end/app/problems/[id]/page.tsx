@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import CodeEditor from "@/components/CodeEditor";
@@ -50,6 +50,7 @@ function parseCustom(values: string[]) {
 
 export default function ProblemPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [code, setCode] = useState("");
   const [result, setResult] = useState<ResultState | null>(null);
@@ -229,7 +230,23 @@ export default function ProblemPage() {
       <div className="flex h-10 shrink-0 items-center gap-2 border-b border-line bg-[#111317] px-2">
         <span className="flex items-center gap-2 px-2 text-xs font-medium text-zinc-300">
           Code
-          <span className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">{language.label}</span>
+          {problem.variants.length > 1 ? (
+            <select
+              aria-label="Language"
+              value={problem.id}
+              onChange={(e) => router.push(`/problems/${e.target.value}`)}
+              className="rounded border border-line bg-surface-2 px-1 py-0.5 font-mono text-[10px] text-zinc-300 outline-none hover:border-line-strong focus:border-accent"
+            >
+              {problem.variants
+                .map((v) => ({ id: v.id, label: languageInfo(v.language).label }))
+                .sort((a, b) => a.label.localeCompare(b.label))
+                .map((v) => (
+                  <option key={v.id} value={v.id}>{v.label}</option>
+                ))}
+            </select>
+          ) : (
+            <span className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">{language.label}</span>
+          )}
         </span>
         {!dbg.active && <SaveIndicator status={draft.status} />}
         {dbg.active && (
