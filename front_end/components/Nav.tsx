@@ -34,7 +34,6 @@ export default function Nav() {
   }, []);
 
   if (
-    pathname === "/" ||
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/signup" ||
@@ -59,24 +58,26 @@ export default function Nav() {
         LadyBug
       </Link>
 
-      <div className="flex h-full items-center gap-1">
-        {links.map(({ href, label }) => {
-          const active = pathname.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={`relative flex h-full items-center px-3 text-sm transition-colors ${
-                active ? "text-white" : "text-zinc-400 hover:text-zinc-200"
-              }`}
-            >
-              {label}
-              {active && <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-accent" />}
-            </Link>
-          );
-        })}
-      </div>
+      {user && (
+        <div className="flex h-full items-center gap-1">
+          {links.map(({ href, label }) => {
+            const active = pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={active ? "page" : undefined}
+                className={`relative flex h-full items-center px-3 text-sm transition-colors ${
+                  active ? "text-white" : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                {label}
+                {active && <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-accent" />}
+              </Link>
+            );
+          })}
+        </div>
+      )}
 
       <div className="ml-auto flex items-center gap-3">
         {user ? (
@@ -88,7 +89,7 @@ export default function Nav() {
               href="/register"
               className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-zinc-950 transition-colors hover:bg-accent-hover"
             >
-              Sign up
+              Debug now
             </Link>
           </>
         )}
