@@ -20,6 +20,7 @@ export default function Nav() {
   }, [pathname]);
 
   if (
+    pathname === "/" ||
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/signup" ||
