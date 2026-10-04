@@ -13,6 +13,7 @@ import { HttpError } from "./errors.js";
 import { featuresRouter, insightsRouter } from "./insights.js";
 import { migrate } from "./migrate.js";
 import { problemsRouter } from "./problems.js";
+import { profileRouter } from "./profile.js";
 
 await migrate();
 
@@ -43,6 +44,7 @@ app.use("/api/challenges", challengesRouter);
 app.use("/api/activity", activityRouter);
 app.use("/api/insights", insightsRouter);
 app.use("/api/features", featuresRouter);
+app.use("/api/profile", profileRouter);
 
 app.use((_req, _res, next) => next(new HttpError(404, "Not found")));
 

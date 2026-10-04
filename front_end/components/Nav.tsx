@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOutIcon } from "@/components/ui/icons";
+import UserMenu from "@/components/UserMenu";
 import { api, type User } from "@/lib/api";
 
 const links = [
@@ -22,6 +22,17 @@ export default function Nav() {
       .catch(() => setUser(null));
   }, [pathname]);
 
+  useEffect(() => {
+    function handleUserUpdated(e: Event) {
+      const customEvent = e as CustomEvent<{ user: User }>;
+      if (customEvent.detail?.user) {
+        setUser(customEvent.detail.user);
+      }
+    }
+    window.addEventListener("ladybug:user-updated", handleUserUpdated);
+    return () => window.removeEventListener("ladybug:user-updated", handleUserUpdated);
+  }, []);
+
   if (
     pathname === "/" ||
     pathname === "/login" ||
@@ -38,8 +49,6 @@ export default function Nav() {
     setUser(null);
     router.push("/login");
   }
-
-  const name = user?.fullName || user?.email || "";
 
   return (
     <nav className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-6 border-b border-line bg-canvas/90 px-4 backdrop-blur sm:px-6">
@@ -71,21 +80,7 @@ export default function Nav() {
 
       <div className="ml-auto flex items-center gap-3">
         {user ? (
-          <>
-            <span className="hidden items-center gap-2 sm:flex">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full border border-line-strong bg-surface-2 text-xs font-semibold uppercase text-zinc-300">
-                {name.charAt(0)}
-              </span>
-              <span className="max-w-48 truncate text-sm text-zinc-400">{name}</span>
-            </span>
-            <button
-              onClick={logout}
-              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-zinc-400 transition-colors hover:bg-surface-2 hover:text-zinc-100"
-            >
-              <LogOutIcon className="size-3.5" />
-              Log out
-            </button>
-          </>
+          <UserMenu user={user} onLogout={logout} />
         ) : (
           <>
             <Link href="/login" className="text-sm text-zinc-400 hover:text-zinc-100">Log in</Link>

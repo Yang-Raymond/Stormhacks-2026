@@ -5,37 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, ApiError, type AuthMethod, type MeResponse, type User } from "@/lib/api";
 import Logo from "@/components/auth/Logo";
-
-const ROLES = [
-  "Software engineer",
-  "Student",
-  "Data scientist",
-  "QA / test engineer",
-  "Engineering manager",
-  "Other",
-] as const;
-
-const AVAILABLE_LANGS = [
-  "Python",
-  "TypeScript",
-  "JavaScript",
-  "Go",
-  "Other",
-] as const;
-
-function getInitials(name?: string | null, email?: string): string {
-  if (name && name.trim()) {
-    const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-  if (email) {
-    return email.slice(0, 2).toUpperCase();
-  }
-  return "LB";
-}
+import { ROLES, AVAILABLE_LANGS, getInitials } from "@/lib/profile";
 
 export default function OnboardingPage() {
   const router = useRouter();

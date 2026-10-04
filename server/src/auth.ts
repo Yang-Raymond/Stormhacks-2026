@@ -44,6 +44,12 @@ const onboardingSchema = z.object({
   }),
 });
 
+const profileSchema = z.object({
+  fullName: z.string().trim().min(1, "Display name is required").max(100),
+  role: z.enum(ROLES, { message: "Please select a valid role" }),
+  languages: z.array(z.enum(LANGS)).min(1, "Pick at least one language"),
+});
+
 export type UserRow = {
   id: string;
   email: string;
@@ -52,6 +58,7 @@ export type UserRow = {
   debug_languages: string[] | null;
   avatar_url: string | null;
   onboarded_at: Date | string | null;
+  created_at?: Date | string | null;
 };
 
 export function toUser(row: UserRow) {
@@ -63,6 +70,7 @@ export function toUser(row: UserRow) {
     debugLanguages: row.debug_languages ?? [],
     avatarUrl: row.avatar_url,
     onboarded: Boolean(row.onboarded_at),
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
   };
 }
 
@@ -113,7 +121,7 @@ authRouter.post("/register", async (req, res) => {
     `INSERT INTO users (email, password_hash, full_name, terms_accepted_at)
      VALUES ($1, $2, $3, NULL)
      ON CONFLICT (email) DO NOTHING
-     RETURNING id, email, full_name, role, debug_languages, avatar_url, onboarded_at`,
+     RETURNING id, email, full_name, role, debug_languages, avatar_url, onboarded_at, created_at`,
     [email, await hashPassword(password), fullName || null],
   );
   if (rows.length === 0) {
@@ -128,7 +136,7 @@ authRouter.post("/register", async (req, res) => {
 authRouter.post("/login", async (req, res) => {
   const { email, password, remember } = loginSchema.parse(req.body);
   const { rows } = await pool.query<UserRow & { password_hash: string | null }>(
-    "SELECT id, email, password_hash, full_name, role, debug_languages, avatar_url, onboarded_at FROM users WHERE email = $1",
+    "SELECT id, email, password_hash, full_name, role, debug_languages, avatar_url, onboarded_at, created_at FROM users WHERE email = $1",
     [email],
   );
   const user = rows[0];
@@ -151,7 +159,7 @@ authRouter.post("/logout", (req, res, next) => {
 authRouter.get("/me", async (req, res) => {
   if (!req.session.userId) return void res.json({ user: null });
   const { rows } = await pool.query<UserRow>(
-    "SELECT id, email, full_name, role, debug_languages, avatar_url, onboarded_at FROM users WHERE id = $1",
+    "SELECT id, email, full_name, role, debug_languages, avatar_url, onboarded_at, created_at FROM users WHERE id = $1",
     [req.session.userId],
   );
   if (!rows[0]) return void res.json({ user: null });
@@ -167,7 +175,22 @@ authRouter.post("/onboarding", requireAuth, async (req, res) => {
     `UPDATE users
      SET full_name = $1, role = $2, debug_languages = $3, terms_accepted_at = now(), onboarded_at = now()
      WHERE id = $4
-     RETURNING id, email, full_name, role, debug_languages, avatar_url, onboarded_at`,
+     RETURNING id, email, full_name, role, debug_languages, avatar_url, onboarded_at, created_at`,
+    [fullName, role, languages, req.session.userId],
+  );
+  if (rows.length === 0) throw new HttpError(404, "User not found");
+  res.json({
+    user: toUser(rows[0]),
+  });
+});
+
+authRouter.patch("/profile", requireAuth, async (req, res) => {
+  const { fullName, role, languages } = profileSchema.parse(req.body);
+  const { rows } = await pool.query<UserRow>(
+    `UPDATE users
+     SET full_name = $1, role = $2, debug_languages = $3
+     WHERE id = $4
+     RETURNING id, email, full_name, role, debug_languages, avatar_url, onboarded_at, created_at`,
     [fullName, role, languages, req.session.userId],
   );
   if (rows.length === 0) throw new HttpError(404, "User not found");

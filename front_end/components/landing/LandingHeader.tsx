@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { LogoMark, PrimaryButton, container } from "./shared";
+import LandingAuthActions from "./LandingAuthActions";
+import { LogoMark, container } from "./shared";
 
 const links = [
   { href: "#how-it-works", label: "How it works" },
@@ -30,17 +31,7 @@ export default function LandingHeader() {
         </nav>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-5">
-          <Link
-            href="/login"
-            className="text-sm font-medium text-zinc-300 transition-colors hover:text-white"
-          >
-            Log in
-          </Link>
-          <PrimaryButton href="/register" className="h-9 px-4 text-xs font-semibold">
-            Start practicing
-          </PrimaryButton>
-        </div>
+        <LandingAuthActions />
       </div>
     </header>
   );
