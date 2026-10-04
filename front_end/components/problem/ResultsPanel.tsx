@@ -1,6 +1,6 @@
 "use client";
 
-import { BugIcon, CheckIcon, XIcon } from "@/components/ui/icons";
+import { BugIcon, CheckIcon, LightbulbIcon, XIcon } from "@/components/ui/icons";
 import type { RunResult, TestResult } from "@/lib/api";
 import { Field } from "./TestcasePanel";
 
@@ -15,12 +15,14 @@ function verdict(r: ResultState) {
   return r.passed ? "All tests passed" : "Tests failing";
 }
 
-export default function ResultsPanel({ result, pending, params, onDebug }: {
+export default function ResultsPanel({ result, pending, params, onDebug, onHint }: {
   result: ResultState | null;
   pending: "run" | "submit" | null;
   params: string[];
   /** Debug a failing case: "case-<index>" for visible tests, "hidden" for the revealed hidden one. */
-  onDebug: (caseKey: string) => void;
+  onDebug?: (caseKey: string) => void;
+  /** Ask for an AI hint about a failing case (only when hints are configured). */
+  onHint?: (failing: TestResult) => void;
 }) {
   if (pending) {
     return (
@@ -65,14 +67,22 @@ export default function ResultsPanel({ result, pending, params, onDebug }: {
 
       <ul className="mt-4 space-y-3">
         {result.visibleResults.map((r, i) => (
-          <TestCard key={i} title={`Case ${i + 1}`} result={r} params={params} onDebug={() => onDebug(`case-${i}`)} />
+          <TestCard
+            key={i}
+            title={`Case ${i + 1}`}
+            result={r}
+            params={params}
+            onDebug={onDebug && (() => onDebug(`case-${i}`))}
+            onHint={onHint && (() => onHint(r))}
+          />
         ))}
         {result.hiddenFailure && (
           <TestCard
             title={`Hidden test #${result.hiddenFailure.testNumber}`}
             result={result.hiddenFailure}
             params={params}
-            onDebug={() => onDebug("hidden")}
+            onDebug={onDebug && (() => onDebug("hidden"))}
+            onHint={onHint && (() => onHint(result.hiddenFailure!))}
           />
         )}
       </ul>
@@ -85,11 +95,12 @@ export default function ResultsPanel({ result, pending, params, onDebug }: {
   );
 }
 
-function TestCard({ title, result: r, params, onDebug }: {
+function TestCard({ title, result: r, params, onDebug, onHint }: {
   title: string;
   result: TestResult;
   params: string[];
-  onDebug: () => void;
+  onDebug?: () => void;
+  onHint?: () => void;
 }) {
   const input = r.args.map((a, i) => `${params[i] ?? `arg${i + 1}`} = ${show(a)}`).join("\n");
   return (
@@ -97,17 +108,27 @@ function TestCard({ title, result: r, params, onDebug }: {
       <div className="flex items-center gap-2 border-b border-line/70 px-3 py-2">
         <span
           className={`flex h-5 w-5 items-center justify-center rounded-full ${
-            r.passed ? "bg-[#12281c] text-easy" : "bg-red-500/15 text-red-400"
+            r.passed ? "bg-success-surface text-easy" : "bg-red-500/15 text-red-400"
           }`}
         >
           {r.passed ? <CheckIcon className="size-3" /> : <XIcon className="size-3" />}
         </span>
         <span className="text-sm font-medium text-zinc-200">{title}</span>
-        {!r.passed && (
+        {!r.passed && onHint && (
+          <button
+            type="button"
+            onClick={onHint}
+            className="ml-auto flex items-center gap-1.5 rounded-md border border-line-strong px-2 py-1 text-xs text-zinc-300 transition-colors hover:bg-surface-2"
+          >
+            <LightbulbIcon className="size-3.5" />
+            Get a hint
+          </button>
+        )}
+        {!r.passed && onDebug && (
           <button
             type="button"
             onClick={onDebug}
-            className="ml-auto flex items-center gap-1.5 rounded-md border border-accent/30 px-2 py-1 text-xs text-accent transition-colors hover:bg-accent/10"
+            className={`${onHint ? "" : "ml-auto "}flex items-center gap-1.5 rounded-md border border-accent/30 px-2 py-1 text-xs text-accent-ink transition-colors hover:bg-accent/10`}
           >
             <BugIcon className="size-3.5" />
             Debug this case

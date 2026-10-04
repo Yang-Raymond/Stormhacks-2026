@@ -10,8 +10,8 @@ import WatchPanel from "./WatchPanel";
 
 const steps = [
   <>Click in the gutter left of a line number to set a <b className="text-red-400">breakpoint</b>. Right-click it to add a condition.</>,
-  <>Choose the input to debug in the <b className="text-zinc-200">Testcase</b> tab, or write your own.</>,
-  <>Press <b className="text-accent">Debug</b> (F5), then step forwards <i>and backwards</i> through every line.</>,
+  <>Choose the input to debug in the <b className="text-zinc-200">Test cases</b> tab, or write your own.</>,
+  <>Press <b className="text-accent-ink">Debug</b> (F5), then step forwards <i>and backwards</i> through every line.</>,
 ];
 
 export default function DebugPanel({ dbg, lineText, caseLabel, onStart }: {
@@ -25,7 +25,7 @@ export default function DebugPanel({ dbg, lineText, caseLabel, onStart }: {
       <div className="grid h-full min-h-0 md:grid-cols-[1.2fr_1fr]">
         <div className="overflow-auto p-5">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-line-strong bg-surface-2 text-accent">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-line-strong bg-surface-2 text-accent-ink">
               <BugIcon className="size-5" />
             </span>
             <div>
@@ -52,7 +52,7 @@ export default function DebugPanel({ dbg, lineText, caseLabel, onStart }: {
             type="button"
             onClick={onStart}
             disabled={dbg.starting}
-            className="mt-5 flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/20 disabled:opacity-60"
+            className="mt-5 flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-medium text-accent-ink transition-colors hover:bg-accent/20 disabled:opacity-60"
           >
             <BugIcon className="size-4" />
             {dbg.starting ? "Recording…" : `Debug ${caseLabel}`}

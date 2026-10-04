@@ -16,7 +16,7 @@ export default function VariablesPanel({ dbg }: { dbg: Debugger }) {
     <Section title={frame ? `Variables · ${frame.name}` : "Variables"}>
       <dl className="py-1 text-xs">
         {innermost && step?.event === "return" && (
-          <Row name="↩ return" nameClass="text-accent">
+          <Row name="↩ return" nameClass="text-accent-ink">
             <ValueText value={step.value ?? "None"} />
           </Row>
         )}
@@ -49,7 +49,7 @@ function Row({ name, nameClass = "text-zinc-400", highlight, children }: {
     >
       <dt className={`font-mono ${nameClass}`}>
         {name}
-        {highlight && <span className="ml-1 text-accent">•</span>}
+        {highlight && <span className="ml-1 text-accent-ink">•</span>}
       </dt>
       <dd className="min-w-0">{children}</dd>
     </div>

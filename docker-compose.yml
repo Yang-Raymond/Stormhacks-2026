@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: debugcode
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432" # local only; nothing outside this machine should reach the database
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -21,13 +21,15 @@ services:
     networks: [sandbox]
     read_only: true
     tmpfs:
-      - /tmp:size=64m
+      # Compilers write object files and binaries here, and C/C++ binaries run from it (hence exec).
+      - /tmp:size=256m,exec
     cap_drop: [ALL]
     security_opt:
       - no-new-privileges:true
-    mem_limit: 512m
-    cpus: 1.0
-    pids_limit: 64
+    # The JVM and the C++ compiler need more headroom than Python did.
+    mem_limit: 1g
+    cpus: 2.0
+    pids_limit: 256
     restart: unless-stopped
 
   server:
@@ -37,7 +39,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgres://postgres:${POSTGRES_PASSWORD}@db:5432/debugcode}
       RUNNER_URL: http://runner:8000
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000" # local only: public traffic must go through the front end / reverse proxy
     volumes:
       - ./server:/app
       - /app/node_modules
@@ -53,7 +55,7 @@ services:
     environment:
       API_URL: http://server:4000
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000" # local only: public traffic must come through Caddy, which sets X-Forwarded-For
     volumes:
       - ./front_end:/app
       - /app/node_modules

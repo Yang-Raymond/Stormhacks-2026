@@ -3,6 +3,7 @@
 import type { BeforeMount, Monaco, OnMount } from "@monaco-editor/react";
 import dynamic from "next/dynamic";
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { useTheme } from "@/hooks/useTheme";
 import type { Breakpoints } from "@/lib/debugger";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
@@ -18,6 +19,8 @@ type Position = NonNullable<ReturnType<StandaloneEditor["getPosition"]>>;
 
 export type CodeEditorProps = {
   value: string;
+  /** Monaco language id. */
+  language?: string;
   onChange: (v: string) => void;
   readOnly?: boolean;
   breakpoints?: Breakpoints;
@@ -38,27 +41,39 @@ export type CodeEditorProps = {
 };
 
 const defineTheme: BeforeMount = (monaco) => {
+  monaco.editor.defineTheme("ladybug-light", {
+    base: "vs",
+    inherit: true,
+    rules: [],
+    colors: {
+      "editor.background": "#ffffff",
+      "editorGutter.background": "#ffffff",
+      "editor.lineHighlightBackground": "#f0f2f5",
+      "editor.selectionBackground": "#b03e4330",
+      "editorCursor.foreground": "#b03e43",
+    },
+  });
   monaco.editor.defineTheme("ladybug", {
     base: "vs-dark",
     inherit: true,
     rules: [],
     colors: {
-      "editor.background": "#14161b",
-      "editorGutter.background": "#14161b",
-      "editor.lineHighlightBackground": "#1a1d2380",
+      "editor.background": "#121215",
+      "editorGutter.background": "#121215",
+      "editor.lineHighlightBackground": "#18181c80",
       "editor.lineHighlightBorder": "#00000000",
       "editorLineNumber.foreground": "#4b5060",
       "editorLineNumber.activeForeground": "#c8ccd4",
-      "editor.selectionBackground": "#f2b54430",
-      "editor.inactiveSelectionBackground": "#f2b5441a",
-      "editorIndentGuide.background1": "#23262e",
+      "editor.selectionBackground": "#b03e4335",
+      "editor.inactiveSelectionBackground": "#b03e4318",
+      "editorIndentGuide.background1": "#222228",
       "editorIndentGuide.activeBackground1": "#3a3f4b",
-      "editorCursor.foreground": "#f2b544",
-      "editorWidget.background": "#1a1d23",
-      "editorWidget.border": "#2b2f38",
-      "editorHoverWidget.background": "#1a1d23",
-      "editorHoverWidget.border": "#2b2f38",
-      "scrollbarSlider.background": "#2b2f3880",
+      "editorCursor.foreground": "#b03e43",
+      "editorWidget.background": "#18181c",
+      "editorWidget.border": "#2f3038",
+      "editorHoverWidget.background": "#18181c",
+      "editorHoverWidget.border": "#2f3038",
+      "scrollbarSlider.background": "#2f303880",
       "scrollbarSlider.hoverBackground": "#3a3f4b",
     },
   });
@@ -80,6 +95,7 @@ function breakpointDecorations(monaco: Monaco, breakpoints: Breakpoints, lineCou
 }
 
 export default function CodeEditor(props: CodeEditorProps) {
+  const { resolved } = useTheme();
   const { value, onChange, readOnly, breakpoints, currentLine, currentIsException, frameLine, inlineValues } = props;
   const editorRef = useRef<StandaloneEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
@@ -212,7 +228,7 @@ export default function CodeEditor(props: CodeEditorProps) {
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => latest.current.commands?.submit?.());
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Quote, () => latest.current.commands?.run?.());
 
-    const hover = monaco.languages.registerHoverProvider("python", {
+    const hover = monaco.languages.registerHoverProvider(latest.current.language ?? "python", {
       provideHover(model: TextModel, position: Position) {
         const values = latest.current.hoverValues;
         const word = model === editor.getModel() ? model.getWordAtPosition(position) : null;
@@ -231,8 +247,8 @@ export default function CodeEditor(props: CodeEditorProps) {
     <div className="relative h-full">
       <MonacoEditor
         height="100%"
-        language="python"
-        theme="ladybug"
+        language={props.language ?? "python"}
+        theme={resolved === "light" ? "ladybug-light" : "ladybug"}
         value={value}
         beforeMount={defineTheme}
         onMount={handleMount}
@@ -276,7 +292,7 @@ export default function CodeEditor(props: CodeEditorProps) {
             placeholder="Python expression, e.g. i == 3 (empty = always)"
             className="min-w-40 flex-1 rounded border border-line bg-canvas-2 px-2 py-1 font-mono text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-accent/60 focus:outline-none"
           />
-          <button type="submit" className="rounded bg-accent px-2.5 py-1 text-xs font-semibold text-zinc-950 hover:bg-accent-hover">
+          <button type="submit" className="rounded bg-accent px-2.5 py-1 text-xs font-semibold text-white hover:bg-accent-hover">
             Save
           </button>
           <button type="button" onClick={() => setConditionEditor(null)} className="rounded px-2 py-1 text-xs text-zinc-400 hover:text-zinc-100">

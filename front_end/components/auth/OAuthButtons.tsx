@@ -44,7 +44,7 @@ export default function OAuthButtons({
   };
 
   const githubIcon = (
-    <img src="/GitHub_Invertocat_Black.svg" alt="GitHub Logo" className="w-4 h-4 invert" />
+    <img src="/GitHub_Invertocat_Black.svg" alt="GitHub Logo" className="w-4 h-4 dark:invert" />
   );
 
   const googleIcon = (
@@ -52,7 +52,7 @@ export default function OAuthButtons({
   );
 
   const buttonClass =
-    "flex items-center justify-center gap-2.5 h-11 rounded-lg border border-[#232730] bg-[#16181d] text-sm font-medium text-zinc-200 hover:bg-[#1c1f26] hover:border-zinc-700 transition-colors focus:outline-none focus:ring-2 focus:ring-[#f2b544]/50 disabled:opacity-50 disabled:cursor-not-allowed";
+    "flex items-center justify-center gap-2.5 h-11 rounded-lg border border-line bg-surface text-sm font-medium text-zinc-200 hover:bg-surface-2 hover:border-zinc-700 transition-colors focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50 disabled:cursor-not-allowed";
 
   if (layout === "inline") {
     return (

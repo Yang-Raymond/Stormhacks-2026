@@ -1,5 +1,6 @@
 import { config } from "./config.js";
 import { HttpError } from "./errors.js";
+import type { Language, Signature } from "./languages.js";
 
 export type TestCase = { args: unknown[]; expected: unknown };
 export type TestResult = { passed: boolean; actual?: string; error?: string };
@@ -38,14 +39,15 @@ export type EvalResult = {
 };
 export type BreakpointCondition = { line: number; expr: string };
 
-async function callRunner<T>(path: string, body: unknown): Promise<T> {
+// Maximum compilation + execution budget is 30 seconds, plus transport overhead.
+async function callRunner<T>(path: string, body: unknown, timeoutMs = 35_000): Promise<T> {
   let res: Response;
   try {
     res = await fetch(new URL(path, config.RUNNER_URL), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (err) {
     console.error("runner unreachable", err);
@@ -55,10 +57,23 @@ async function callRunner<T>(path: string, body: unknown): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** Executes Python code against test cases in the sandboxed runner service. */
-export function runTests(code: string, entryPoint: string, tests: TestCase[]): Promise<RunResult> {
-  return callRunner("/run", { code, entry_point: entryPoint, tests });
+/**
+ * Executes code against test cases in the sandboxed runner service. Statically typed languages need the
+ * signature so the runner can turn JSON arguments into native values.
+ */
+export function runTests(
+  code: string,
+  entryPoint: string,
+  tests: TestCase[],
+  language: Language = "python",
+  signature?: Signature | null,
+): Promise<RunResult> {
+  return callRunner("/run", { code, entry_point: entryPoint, tests, language, signature: signature ?? undefined });
 }
+
+/** Compiling with debug info and stepping under gdb/JDI takes longer than a test run. */
+// Maximum compilation + tracing budget is 32 seconds; allow transport overhead.
+const TRACE_TIMEOUT_MS = 37_000;
 
 /** Records every executed line of one call so the client can step through it like a debugger. */
 export function traceCode(
@@ -66,8 +81,14 @@ export function traceCode(
   entryPoint: string,
   args: unknown[],
   conditions: BreakpointCondition[] = [],
+  language: Language = "python",
+  signature?: Signature | null,
 ): Promise<TraceResult> {
-  return callRunner("/trace", { code, entry_point: entryPoint, args, conditions });
+  return callRunner(
+    "/trace",
+    { code, entry_point: entryPoint, args, conditions, language, signature: signature ?? undefined },
+    TRACE_TIMEOUT_MS,
+  );
 }
 
 /** Replays the same call up to `step` and evaluates expressions in the given stack frame (0 = innermost). */
@@ -76,9 +97,19 @@ export function evalAtStep(
   entryPoint: string,
   args: unknown[],
   at: { step: number; frame: number; expressions: string[]; conditions?: BreakpointCondition[] },
+  language: Language = "python",
+  signature?: Signature | null,
 ): Promise<EvalResult> {
   const { conditions = [], ...evalSpec } = at;
-  return callRunner("/trace", { code, entry_point: entryPoint, args, conditions, eval: evalSpec });
+  return callRunner("/trace", {
+    code,
+    entry_point: entryPoint,
+    args,
+    conditions,
+    eval: evalSpec,
+    language,
+    signature: signature ?? undefined,
+  }, TRACE_TIMEOUT_MS);
 }
 
 export function allPassed(run: RunResult, total: number) {

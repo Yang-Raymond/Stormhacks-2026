@@ -5,37 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, ApiError, type AuthMethod, type MeResponse, type User } from "@/lib/api";
 import Logo from "@/components/auth/Logo";
+import { ROLES, getInitials } from "@/lib/profile";
 
-const ROLES = [
-  "Software engineer",
-  "Student",
-  "Data scientist",
-  "QA / test engineer",
-  "Engineering manager",
-  "Other",
-] as const;
-
-const AVAILABLE_LANGS = [
-  "Python",
-  "TypeScript",
-  "JavaScript",
-  "Go",
-  "Other",
-] as const;
-
-function getInitials(name?: string | null, email?: string): string {
-  if (name && name.trim()) {
-    const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-  if (email) {
-    return email.slice(0, 2).toUpperCase();
-  }
-  return "LB";
-}
+import { LANGUAGES, preferredLanguage, type Language } from "@/lib/languages";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -46,7 +18,7 @@ export default function OnboardingPage() {
 
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<string>("Software engineer");
-  const [selectedLangs, setSelectedLangs] = useState<string[]>(["Python"]);
+  const [language, setLanguage] = useState<Language>("python");
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const [pending, setPending] = useState(false);
@@ -69,7 +41,7 @@ export default function OnboardingPage() {
         setFullName(data.user.fullName || "");
         if (data.user.role) setRole(data.user.role);
         if (data.user.debugLanguages && data.user.debugLanguages.length > 0) {
-          setSelectedLangs(data.user.debugLanguages);
+          setLanguage(preferredLanguage(data.user.debugLanguages));
         }
         setLoading(false);
       })
@@ -83,22 +55,6 @@ export default function OnboardingPage() {
     router.push("/login");
   }
 
-  function toggleLanguage(lang: string) {
-    setSelectedLangs((prev) => {
-      const exists = prev.includes(lang);
-      if (exists) {
-        return prev.filter((l) => l !== lang);
-      } else {
-        return [...prev, lang];
-      }
-    });
-    setFieldErrors((prev) => {
-      const next = { ...prev };
-      delete next.languages;
-      return next;
-    });
-  }
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -106,14 +62,6 @@ export default function OnboardingPage() {
       setFieldErrors((prev) => ({
         ...prev,
         acceptTerms: "You must agree to the Terms of Service and Privacy Policy.",
-      }));
-      return;
-    }
-
-    if (selectedLangs.length === 0) {
-      setFieldErrors((prev) => ({
-        ...prev,
-        languages: "Please select at least one language.",
       }));
       return;
     }
@@ -127,7 +75,7 @@ export default function OnboardingPage() {
         body: {
           fullName: fullName.trim(),
           role,
-          languages: selectedLangs,
+          languages: [language],
           acceptTerms: true,
         },
       });
@@ -149,13 +97,13 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d0e12] flex items-center justify-center">
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
         <div className="flex items-center gap-3 text-sm text-zinc-400">
-          <svg className="h-5 w-5 animate-spin text-[#f2b544]" viewBox="0 0 24 24" fill="none">
+          <svg className="h-5 w-5 animate-spin text-accent-ink" viewBox="0 0 24 24" fill="none">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
-          <span>Loading...</span>
+          <span>Loading…</span>
         </div>
       </div>
     );
@@ -163,12 +111,12 @@ export default function OnboardingPage() {
 
   const firstName = fullName.trim().split(/\s+/)[0] || user?.fullName?.trim().split(/\s+/)[0] || "";
   const providerLabel =
-    authMethod === "github" ? "GitHub" : authMethod === "google" ? "Google" : "email";
+    authMethod === "github" ? "GitHub" : authMethod === "google" ? "Google" : "Email";
 
   return (
-    <div className="min-h-screen bg-[#0d0e12] text-zinc-100 flex flex-col">
+    <div className="min-h-screen bg-canvas text-zinc-100 flex flex-col">
       {/* Top Header */}
-      <header className="border-b border-[#1f2229] px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-line px-6 py-4 flex items-center justify-between">
         <Logo />
 
         {/* Stepper */}
@@ -184,8 +132,8 @@ export default function OnboardingPage() {
           <div className="w-8 h-[1px] bg-zinc-800" />
 
           {/* Step 2 */}
-          <div className="flex items-center gap-1.5 text-[#f2b544] font-medium">
-            <span className="w-4 h-4 rounded-full bg-[#f2b544] text-zinc-950 flex items-center justify-center text-[10px] font-bold">
+          <div className="flex items-center gap-1.5 text-accent-ink font-medium">
+            <span className="w-4 h-4 rounded-full bg-accent text-white flex items-center justify-center text-[10px] font-bold">
               2
             </span>
             <span>Set up profile</span>
@@ -208,7 +156,7 @@ export default function OnboardingPage() {
       {/* Main Content */}
       <main className="flex-1 flex justify-center px-4 py-10 sm:py-14">
         <div className="w-full max-w-[620px]">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             Welcome to LadyBug{firstName ? `, ${firstName}` : ""}
           </h1>
           <p className="mt-2 text-sm text-zinc-400 leading-relaxed">
@@ -218,7 +166,7 @@ export default function OnboardingPage() {
           </p>
 
           {/* Account card */}
-          <div className="mt-6 rounded-xl border border-[#232730] bg-[#16181d] px-4 py-3.5 flex items-center justify-between">
+          <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-3.5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-200 overflow-hidden shrink-0">
                 {user?.avatarUrl ? (
@@ -232,15 +180,15 @@ export default function OnboardingPage() {
                 )}
               </div>
               <div className="flex flex-col justify-center">
-                <span className="text-sm font-medium text-white">
-                  Signed in with {providerLabel}
+                <span className="text-sm font-medium text-foreground">
+                  Logged in with {providerLabel}
                 </span>
               </div>
             </div>
             <button
               type="button"
               onClick={handleSwitchAccount}
-              className="text-xs text-[#f2b544] hover:underline font-medium cursor-pointer"
+              className="text-xs text-accent-ink hover:underline font-medium cursor-pointer"
             >
               Not you? Switch account
             </button>
@@ -256,7 +204,7 @@ export default function OnboardingPage() {
           )}
 
           <form onSubmit={handleSubmit} className="mt-8 flex flex-col">
-            <h2 className="text-base font-semibold text-white">Your profile</h2>
+            <h2 className="text-base font-semibold text-foreground">Your profile</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
               {/* Display name */}
@@ -272,7 +220,7 @@ export default function OnboardingPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Your name"
-                  className="h-11 w-full rounded-lg border border-[#232730] bg-[#16181d] px-3.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-[#f2b544] focus:outline-none focus:ring-2 focus:ring-[#f2b544]/20 transition-colors"
+                  className="h-11 w-full rounded-lg border border-line bg-surface px-3.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-colors"
                 />
                 {fieldErrors.fullName && (
                   <span className="text-xs text-red-400 mt-0.5">{fieldErrors.fullName}</span>
@@ -290,10 +238,10 @@ export default function OnboardingPage() {
                     name="role"
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="h-11 w-full appearance-none rounded-lg border border-[#232730] bg-[#16181d] px-3.5 pr-10 text-sm text-zinc-100 focus:border-[#f2b544] focus:outline-none focus:ring-2 focus:ring-[#f2b544]/20 transition-colors cursor-pointer"
+                    className="h-11 w-full appearance-none rounded-lg border border-line bg-surface px-3.5 pr-10 text-sm text-zinc-100 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-colors cursor-pointer"
                   >
                     {ROLES.map((r) => (
-                      <option key={r} value={r} className="bg-[#16181d] text-zinc-100">
+                      <option key={r} value={r} className="bg-surface text-zinc-100">
                         {r}
                       </option>
                     ))}
@@ -310,47 +258,30 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {/* Languages you debug most */}
             <div className="mt-8">
-              <h2 className="text-base font-semibold text-white">Languages you debug most</h2>
+              <label htmlFor="preferred-language" className="block text-base font-semibold text-foreground">
+                Preferred language
+              </label>
               <p className="text-xs text-zinc-400 mt-1">
-                Pick any. We&apos;ll set up runtimes and test frameworks for these.
+                Problems open in this language when available.
               </p>
-
-              <div className="flex flex-wrap gap-2.5 mt-3">
-                {AVAILABLE_LANGS.map((lang) => {
-                  const isChecked = selectedLangs.includes(lang);
-                  return (
-                    <button
-                      key={lang}
-                      type="button"
-                      onClick={() => toggleLanguage(lang)}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium border transition-colors cursor-pointer select-none ${
-                        isChecked
-                          ? "border-[#f2b544] bg-[#f2b544]/10 text-white"
-                          : "border-[#232730] bg-[#16181d] text-zinc-300 hover:border-zinc-700"
-                      }`}
-                    >
-                      <span
-                        className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] ${
-                          isChecked
-                            ? "bg-[#f2b544] text-zinc-950 font-bold"
-                            : "border border-zinc-600 bg-transparent"
-                        }`}
-                      >
-                        {isChecked ? "✓" : ""}
-                      </span>
-                      <span>{lang}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              <select
+                id="preferred-language"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as Language)}
+                required
+                className="mt-3 w-full rounded-lg border border-line-strong bg-canvas px-3.5 py-2 text-sm text-foreground focus:border-accent focus:outline-none"
+              >
+                {LANGUAGES.map((lang) => (
+                  <option key={lang.id} value={lang.id}>{lang.label}</option>
+                ))}
+              </select>
               {fieldErrors.languages && (
                 <span className="text-xs text-red-400 mt-1.5 block">{fieldErrors.languages}</span>
               )}
             </div>
 
-            <div className="border-t border-[#1f2229] my-8" />
+            <div className="border-t border-line my-8" />
 
             {/* Footer row: Terms and Submit button */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -371,15 +302,15 @@ export default function OnboardingPage() {
                         });
                       }
                     }}
-                    className="mt-0.5 w-4 h-4 rounded border-[#2a2d34] bg-[#16181d] text-[#f2b544] focus:ring-1 focus:ring-[#f2b544] focus:ring-offset-0 focus:outline-none accent-[#f2b544] cursor-pointer"
+                    className="mt-0.5 w-4 h-4 rounded border-line-strong bg-surface text-accent-ink focus:ring-1 focus:ring-accent focus:ring-offset-0 focus:outline-none accent-accent cursor-pointer"
                   />
                   <label htmlFor="acceptTerms" className="text-xs text-zinc-300 leading-normal cursor-pointer select-none">
                     I agree to the{" "}
-                    <Link href="/terms" target="_blank" className="text-[#f2b544] hover:underline">
+                    <Link href="/terms" target="_blank" className="text-accent-ink hover:underline">
                       Terms of Service
                     </Link>{" "}
                     and{" "}
-                    <Link href="/privacy" target="_blank" className="text-[#f2b544] hover:underline">
+                    <Link href="/privacy" target="_blank" className="text-accent-ink hover:underline">
                       Privacy Policy
                     </Link>
                   </label>
@@ -392,18 +323,18 @@ export default function OnboardingPage() {
               <button
                 type="submit"
                 disabled={pending}
-                className="self-end sm:self-auto flex items-center justify-center px-6 h-11 rounded-lg bg-[#f2b544] text-sm font-semibold text-zinc-950 transition-colors hover:bg-[#e5a83b] focus:outline-none focus:ring-2 focus:ring-[#f2b544]/50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="self-end sm:self-auto flex items-center justify-center px-6 h-11 rounded-lg bg-accent text-sm font-semibold text-white transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {pending ? (
                   <span className="inline-flex items-center gap-2">
-                    <svg className="h-4 w-4 animate-spin text-zinc-950" viewBox="0 0 24 24" fill="none">
+                    <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    Setting up...
+                    Setting up…
                   </span>
                 ) : (
-                  "Start Debugging"
+                  "Start debugging"
                 )}
               </button>
             </div>

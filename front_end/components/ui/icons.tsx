@@ -88,3 +88,60 @@ export const RestartIcon = (p: IconProps) => (
 export const LogOutIcon = (p: IconProps) => (
   <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5M21 12H9" /></Icon>
 );
+
+export const CodeIcon = (p: IconProps) => (
+  <Icon {...p}><path d="m16 18 6-6-6-6M8 6l-6 6 6 6" /></Icon>
+);
+export const CrosshairIcon = (p: IconProps) => (
+  <Icon {...p}><circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /></Icon>
+);
+export const LightbulbIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M9 18h6M10 22h4" />
+    <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z" />
+  </Icon>
+);
+export const BarChartIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M3 21h18M7 17V11M12 17V5M17 17v-3" /></Icon>
+);
+export const CalendarIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="5" width="18" height="16" rx="2" />
+    <path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01" />
+  </Icon>
+);
+export const MessageSquareIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" /></Icon>
+);
+
+export const ClockIcon = (p: IconProps) => (
+  <Icon {...p}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></Icon>
+);
+export const LockIcon = (p: IconProps) => (
+  <Icon {...p}><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></Icon>
+);
+export const TrophyIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0Z" />
+    <path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3" />
+  </Icon>
+);
+
+export const UserIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </Icon>
+);
+
+export const ChevronDownIcon = (p: IconProps) => (
+  <Icon {...p}><path d="m6 9 6 6 6-6" /></Icon>
+);
+
+export const PencilIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+    <path d="m15 5 4 4" />
+  </Icon>
+);
+

@@ -22,7 +22,7 @@ export default function CallStackPanel({ dbg }: { dbg: Debugger }) {
                   selected ? "bg-surface-2 text-zinc-100" : "text-zinc-400 hover:bg-surface-2/60 hover:text-zinc-200"
                 }`}
               >
-                <span className={`w-2 shrink-0 ${i === 0 ? "text-accent" : "text-easy"}`}>{selected ? "▸" : ""}</span>
+                <span className={`w-2 shrink-0 ${i === 0 ? "text-accent-ink" : "text-easy"}`}>{selected ? "▸" : ""}</span>
                 <span className="truncate">{f.name}</span>
                 <span className="ml-auto shrink-0 text-zinc-500">line {f.line}</span>
               </button>

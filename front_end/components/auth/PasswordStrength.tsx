@@ -4,6 +4,8 @@ export function calculatePasswordStrength(pass: string): {
 } {
   if (!pass) return { score: 0, label: "" };
 
+  if (pass.length < 8) return { score: 1, label: "Too short — at least 8 characters" };
+
   let score = 0;
   if (pass.length >= 8) score += 1;
   if (pass.length >= 12) score += 1;
@@ -21,7 +23,7 @@ export function calculatePasswordStrength(pass: string): {
   } else if (score === 3) {
     label = "Good";
   } else if (score === 4) {
-    label = "Strong password";
+    label = "Strong";
   }
 
   return { score, label };
@@ -38,7 +40,7 @@ function getScoreColor(score: number): string {
     case 4:
       return "bg-green-500";
     default:
-      return "bg-[#232730]";
+      return "bg-line";
   }
 }
 
@@ -56,7 +58,7 @@ export default function PasswordStrength({ password }: { password: string }) {
             <div
               key={step}
               className={`h-1 rounded-full transition-colors duration-200 ${
-                isActive ? getScoreColor(score) : "bg-[#232730]"
+                isActive ? getScoreColor(score) : "bg-line"
               }`}
             />
           );

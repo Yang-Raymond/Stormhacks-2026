@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import CodeEditor from "@/components/CodeEditor";
@@ -13,6 +13,7 @@ import TestcasePanel, { CUSTOM_CASE, type TestcaseOption } from "@/components/pr
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
   BugIcon,
+  LightbulbIcon,
   CheckIcon,
   FileTextIcon,
   FlaskIcon,
@@ -25,8 +26,10 @@ import {
 import { useDebugger } from "@/hooks/useDebugger";
 import { type SaveStatus, useDraft } from "@/hooks/useDraft";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { api, type Problem, type RunResult } from "@/lib/api";
+import HintCard, { type HintState } from "@/components/problem/HintCard";
+import { api, type Problem, type RunResult, type TestResult } from "@/lib/api";
 import { inlineValues } from "@/lib/debugger";
+import { DEBUGGABLE, languageInfo } from "@/lib/languages";
 import { paramNames } from "@/lib/python";
 
 type BottomTab = "testcase" | "result" | "debug";
@@ -47,6 +50,7 @@ function parseCustom(values: string[]) {
 
 export default function ProblemPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [code, setCode] = useState("");
   const [result, setResult] = useState<ResultState | null>(null);
@@ -56,6 +60,8 @@ export default function ProblemPage() {
   const [caseKey, setCaseKey] = useState("case-0");
   const [customValues, setCustomValues] = useState<string[] | null>(null);
   const [confirmingReset, setConfirmingReset] = useState(false);
+  const [hint, setHint] = useState<HintState | null>(null);
+
   const dbg = useDebugger(id);
   const draft = useDraft(id, code);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -73,7 +79,11 @@ export default function ProblemPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const params = useMemo(() => (problem ? paramNames(problem.buggyCode, problem.entryPoint) : []), [problem]);
+  const params = useMemo(
+    () => (problem ? (problem.signature?.params.map((p) => p.name) ?? paramNames(problem.buggyCode, problem.entryPoint)) : []),
+    [problem],
+  );
+  const canDebug = problem ? DEBUGGABLE.has(problem.language) : false;
   const lines = useMemo(() => code.split("\n"), [code]);
   const lineText = (line: number) => lines[line - 1] ?? "";
 
@@ -91,6 +101,25 @@ export default function ProblemPage() {
   const selectedCase = caseKey === CUSTOM_CASE ? undefined : (cases.find((c) => c.key === caseKey) ?? cases[0]);
   const debugArgs = caseKey === CUSTOM_CASE ? parsedCustom.args : selectedCase?.args;
   const caseLabel = caseKey === CUSTOM_CASE ? "custom input" : (selectedCase?.label ?? "");
+
+  /** Asks Gemini for a nudge; uses the given failing case, or the first one from the last run. */
+  async function requestHint(failing?: TestResult) {
+    const fromResult = result?.visibleResults.find((r) => !r.passed) ?? result?.hiddenFailure;
+    const target = failing ?? fromResult;
+    setTab("result");
+    setHint({ status: "loading" });
+    try {
+      const { hint: text } = await api<{ hint: string }>(`/problems/${id}/hint`, {
+        body: {
+          code,
+          failing: target && { args: target.args, expected: target.expected, actual: target.actual, error: target.error },
+        },
+      });
+      setHint({ status: "done", text });
+    } catch (e) {
+      setHint({ status: "error", message: (e as Error).message });
+    }
+  }
 
   async function execute(kind: "run" | "submit") {
     setPending(kind);
@@ -122,7 +151,7 @@ export default function ProblemPage() {
   }
 
   async function startDebug(key = caseKey) {
-    if (!problem) return;
+    if (!problem || !canDebug) return;
     const args = key === CUSTOM_CASE ? parsedCustom.args : (cases.find((c) => c.key === key) ?? cases[0])?.args;
     if (!args) {
       setTab("testcase");
@@ -148,7 +177,7 @@ export default function ProblemPage() {
             F11: c.stepInto,
             "Shift+F11": c.stepOut,
           }
-        : { F5: () => void startDebug() };
+        : { F5: canDebug ? () => void startDebug() : undefined };
       const action = actions[key];
       if (!action) return;
       e.preventDefault();
@@ -159,8 +188,8 @@ export default function ProblemPage() {
   });
 
   const inline = useMemo(
-    () => (dbg.active && dbg.frameIndex === 0 ? inlineValues(dbg.steps, dbg.stepIndex, (l) => lines[l - 1] ?? "") : []),
-    [dbg.active, dbg.frameIndex, dbg.steps, dbg.stepIndex, lines],
+    () => (dbg.active && dbg.frameIndex === 0 ? inlineValues(dbg.steps, dbg.stepIndex, (l) => lines[l - 1] ?? "", problem?.language === "python" ? /#.*/ : /\/\/.*/) : []),
+    [dbg.active, dbg.frameIndex, dbg.steps, dbg.stepIndex, lines, problem?.language],
   );
 
   if (!problem) {
@@ -169,7 +198,7 @@ export default function ProblemPage() {
         {error ? (
           <div className="text-center">
             <p className="text-red-400">{error}</p>
-            <Link href="/problems" className="mt-3 inline-block text-sm text-accent hover:underline">Back to problems</Link>
+            <Link href="/problems" className="mt-3 inline-block text-sm text-accent-ink hover:underline">Back to problems</Link>
           </div>
         ) : (
           <span className="h-5 w-5 animate-spin rounded-full border-2 border-line-strong border-t-accent" aria-label="Loading" />
@@ -179,6 +208,7 @@ export default function ProblemPage() {
   }
 
   const frame = dbg.step?.frames[dbg.frameIndex];
+  const language = languageInfo(problem.language);
 
   const descriptionCard = (
     <Card>
@@ -193,14 +223,30 @@ export default function ProblemPage() {
 
   const editorCard = (
     <Card>
-      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-line bg-[#111317] px-2">
+      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-line bg-surface px-2">
         <span className="flex items-center gap-2 px-2 text-xs font-medium text-zinc-300">
           Code
-          <span className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">Python 3</span>
+          {problem.variants.length > 1 ? (
+            <select
+              aria-label="Language"
+              value={problem.id}
+              onChange={(e) => router.push(`/problems/${e.target.value}`)}
+              className="rounded border border-line bg-surface-2 px-1 py-0.5 font-mono text-[10px] text-zinc-300 outline-none hover:border-line-strong focus:border-accent"
+            >
+              {problem.variants
+                .map((v) => ({ id: v.id, label: languageInfo(v.language).label }))
+                .sort((a, b) => a.label.localeCompare(b.label))
+                .map((v) => (
+                  <option key={v.id} value={v.id}>{v.label}</option>
+                ))}
+            </select>
+          ) : (
+            <span className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">{language.label}</span>
+          )}
         </span>
         {!dbg.active && <SaveIndicator status={draft.status} />}
         {dbg.active && (
-          <span className="flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11px] text-accent">
+          <span className="flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[11px] text-accent-ink">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
             Debugging {caseLabel} · read-only
           </span>
@@ -223,11 +269,21 @@ export default function ProblemPage() {
           ) : (
             <ToolbarButton
               onClick={() => void startDebug()}
-              disabled={dbg.starting || !debugArgs}
-              title={`Debug ${caseLabel} (F5)`}
-              className="border border-accent/40 text-accent hover:bg-accent/10"
+              disabled={dbg.starting || !debugArgs || !canDebug}
+              title={canDebug ? `Debug ${caseLabel} (F5)` : "The debugger doesn't support this language yet"}
+              className="border border-accent/40 text-accent-ink hover:bg-accent/10"
             >
               <BugIcon className="size-3.5" /> {dbg.starting ? "Recording…" : "Debug"}
+            </ToolbarButton>
+          )}
+          {!dbg.active && (
+            <ToolbarButton
+              onClick={() => void requestHint()}
+              disabled={hint?.status === "loading"}
+              title="Get an AI hint about your current code"
+              className="text-zinc-300 hover:bg-surface-2 hover:text-zinc-100"
+            >
+              <LightbulbIcon className="size-3.5" /> Hint
             </ToolbarButton>
           )}
           <ToolbarButton
@@ -242,7 +298,7 @@ export default function ProblemPage() {
             onClick={() => execute("submit")}
             disabled={pending !== null}
             title="Submit (Ctrl+Enter)"
-            className="bg-green-600 font-semibold text-white hover:bg-green-500"
+            className="bg-green-600 font-semibold text-foreground hover:bg-green-500"
           >
             <UploadIcon className="size-3.5" /> Submit
           </ToolbarButton>
@@ -251,6 +307,7 @@ export default function ProblemPage() {
       {dbg.active && <DebugToolbar dbg={dbg} />}
       <div className="min-h-0 flex-1">
         <CodeEditor
+          language={language.monaco}
           value={code}
           onChange={setCode}
           readOnly={dbg.active}
@@ -273,7 +330,7 @@ export default function ProblemPage() {
     <Card>
       <CardTabs>
         <CardTab active={tab === "testcase"} onClick={() => setTab("testcase")} icon={<FlaskIcon className="size-3.5" />}>
-          Testcase
+          Test cases
         </CardTab>
         <CardTab active={tab === "result"} onClick={() => setTab("result")} icon={<TerminalIcon className="size-3.5" />}>
           Result
@@ -302,10 +359,31 @@ export default function ProblemPage() {
           />
         )}
         {tab === "result" && (
-          <ResultsPanel result={result} pending={pending} params={params} onDebug={(key) => void startDebug(key)} />
+          <div className="flex h-full min-h-0 flex-col">
+            {hint && <HintCard hint={hint} onClose={() => setHint(null)} />}
+            <div className="min-h-0 flex-1">
+              <ResultsPanel
+                result={result}
+                pending={pending}
+                params={params}
+                onDebug={canDebug ? (key) => void startDebug(key) : undefined}
+                onHint={(failing) => void requestHint(failing)}
+              />
+            </div>
+          </div>
         )}
         {tab === "debug" && (
-          <DebugPanel dbg={dbg} lineText={lineText} caseLabel={caseLabel} onStart={() => void startDebug()} />
+          canDebug ? (
+            <DebugPanel dbg={dbg} lineText={lineText} caseLabel={caseLabel} onStart={() => void startDebug()} />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+              <BugIcon className="size-6 text-zinc-600" />
+              <p className="mt-3 text-sm text-zinc-300">The time-travel debugger doesn&apos;t support this language yet.</p>
+              <p className="mt-1 text-xs text-zinc-500">
+                This problem is in {language.label}. Use Run to check your fix against every test.
+              </p>
+            </div>
+          )
         )}
       </div>
     </Card>
@@ -384,7 +462,7 @@ function Card({ children }: { children: ReactNode }) {
 
 function CardTabs({ children }: { children: ReactNode }) {
   return (
-    <div role="tablist" className="flex h-10 shrink-0 items-center gap-1 border-b border-line bg-[#111317] px-2">
+    <div role="tablist" className="flex h-10 shrink-0 items-center gap-1 border-b border-line bg-surface px-2">
       {children}
     </div>
   );
@@ -406,7 +484,7 @@ function CardTab({ active, onClick, icon, children }: {
         active ? "bg-surface-2 font-medium text-zinc-100" : "text-zinc-500 hover:text-zinc-300"
       }`}
     >
-      <span className={active ? "text-accent" : ""}>{icon}</span>
+      <span className={active ? "text-accent-ink" : ""}>{icon}</span>
       {children}
     </button>
   );

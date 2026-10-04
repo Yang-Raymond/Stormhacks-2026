@@ -17,6 +17,9 @@ export function useDraft(problemId: string, code: string) {
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
   const latest = useRef({ code, savedCode });
+  const revision = useRef(0);
+  const pendingSaves = useRef(0);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     latest.current = { code, savedCode };
@@ -24,15 +27,19 @@ export function useDraft(problemId: string, code: string) {
 
   const save = useCallback(
     async (value: string) => {
+      const atRevision = revision.current;
+      pendingSaves.current += 1;
       setSaving(true);
       try {
         await api(`/problems/${problemId}/draft`, { method: "PUT", body: { code: value } });
+        if (atRevision !== revision.current) return;
         setSavedCode(value);
         setFailed(false);
       } catch {
-        setFailed(true);
+        if (atRevision === revision.current) setFailed(true);
       } finally {
-        setSaving(false);
+        pendingSaves.current -= 1;
+        setSaving(pendingSaves.current > 0);
       }
     },
     [problemId],
@@ -40,14 +47,14 @@ export function useDraft(problemId: string, code: string) {
 
   useEffect(() => {
     if (savedCode === null || code === savedCode) return;
-    const timer = setTimeout(() => void save(code), AUTOSAVE_DELAY_MS);
-    return () => clearTimeout(timer);
+    timer.current = setTimeout(() => void save(code), AUTOSAVE_DELAY_MS);
+    return () => clearTimeout(timer.current);
   }, [code, savedCode, save]);
 
   useEffect(() => {
     const flush = () => {
       const { code, savedCode } = latest.current;
-      if (savedCode === null || code === savedCode) return;
+      if (savedCode === null || (code === savedCode && pendingSaves.current === 0)) return;
       latest.current.savedCode = code;
       api(`/problems/${problemId}/draft`, { method: "PUT", body: { code }, keepalive: true }).catch(() => {});
     };
@@ -68,11 +75,15 @@ export function useDraft(problemId: string, code: string) {
     status,
     /** Record code the server already has (the loaded draft, or code just sent with Run/Submit). */
     markSaved: (value: string) => {
+      latest.current.savedCode = value;
       setSavedCode(value);
       setFailed(false);
     },
     /** Delete the saved draft so the problem opens with its original code again. */
     discard: async (original: string) => {
+      clearTimeout(timer.current);
+      revision.current += 1;
+      latest.current = { code: original, savedCode: original };
       setSavedCode(original);
       await api(`/problems/${problemId}/draft`, { method: "DELETE" });
     },

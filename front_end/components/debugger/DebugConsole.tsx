@@ -51,7 +51,7 @@ export default function DebugConsole({ dbg }: { dbg: Debugger }) {
             <div key={i} className="py-0.5">
               {entry.kind === "input" ? (
                 <span className="text-zinc-400">
-                  <span className="mr-2 text-accent">›</span>
+                  <span className="mr-2 text-accent-ink">›</span>
                   {entry.text}
                 </span>
               ) : entry.kind === "value" ? (
@@ -72,7 +72,7 @@ export default function DebugConsole({ dbg }: { dbg: Debugger }) {
           <div ref={bottom} />
         </div>
         <form onSubmit={submit} className="sticky bottom-0 flex items-center gap-2 border-t border-line bg-surface px-3 py-1.5">
-          <span className="text-accent">›</span>
+          <span className="text-accent-ink">›</span>
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
