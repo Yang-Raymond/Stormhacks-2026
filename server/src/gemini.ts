@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 import { config } from "./config.js";
+import { HttpError } from "./errors.js";
 import { type Language, languageLabels, type Signature, signatureSchema, solutionShape, valueTypes } from "./languages.js";
 import type { TestCase } from "./runner.js";
 
@@ -80,4 +81,24 @@ export async function generateProblem(difficulty: Difficulty, language: Language
     language,
     signature: data.signature,
   };
+}
+
+const RETRY_DELAYS_MS = [700, 2000];
+// 429 / 5xx from Gemini ("high demand") are temporary; anything else (bad key, bad request) won't fix itself.
+const isTransient = (err: unknown) => /"code":\s*(429|500|502|503|504)|UNAVAILABLE|RESOURCE_EXHAUSTED/.test(String(err));
+
+/** Plain-text completion, used for AI hints when Snowflake Cortex isn't available. Retries temporary overloads. */
+export async function generateText(prompt: string, temperature = 0.4): Promise<string> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const response = await ai.models.generateContent({ model: config.GEMINI_MODEL, contents: prompt, config: { temperature } });
+      return response.text ?? "";
+    } catch (err) {
+      if (!isTransient(err)) throw err;
+      if (attempt >= RETRY_DELAYS_MS.length) {
+        throw new HttpError(503, "The AI model is busy right now. Please try again in a moment.");
+      }
+      await new Promise((r) => setTimeout(r, RETRY_DELAYS_MS[attempt]));
+    }
+  }
 }

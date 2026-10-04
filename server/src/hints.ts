@@ -1,7 +1,8 @@
 import { config } from "./config.js";
 import { HttpError } from "./errors.js";
+import { generateText } from "./gemini.js";
 import { languageLabels, type Language } from "./languages.js";
-import { snowflakeQuery } from "./snowflake.js";
+import { snowflakeEnabled, snowflakeQuery } from "./snowflake.js";
 
 export type FailingCase = { args: unknown[]; expected: unknown; actual?: string; error?: string };
 
@@ -48,14 +49,44 @@ code or the case they should think about, or ask a guiding question. Do not writ
 line or expression, and do not state the full fix. Plain text only, no preamble.`;
 }
 
-/** Asks Snowflake Cortex for a single nudge (not the answer) about the student's code. */
-export async function generateHint(input: HintInput): Promise<string> {
+export type HintProvider = "cortex" | "gemini";
+
+// Set once Snowflake says Cortex is off for this account (e.g. trial accounts), so later hints skip straight to
+// Gemini instead of paying for a failed round trip. Resets when the server restarts with new credentials.
+let cortexUnavailable = false;
+
+async function fromCortex(text: string) {
   const rows = await snowflakeQuery<{ hint: string }>("SELECT SNOWFLAKE.CORTEX.COMPLETE(?, ?) AS HINT", [
     config.SNOWFLAKE_CORTEX_MODEL,
-    prompt(input),
+    text,
   ]);
-  const hint = rows[0]?.hint?.trim();
-  if (!hint) throw new HttpError(502, "Cortex returned an empty hint, please try again");
+  return rows[0]?.hint ?? "";
+}
+
+/**
+ * A single nudge (not the answer) about the student's code. Uses Snowflake Cortex when the account allows it and
+ * falls back to Gemini otherwise, so hints work on any setup.
+ */
+export async function generateHint(input: HintInput): Promise<{ hint: string; provider: HintProvider }> {
+  const text = prompt(input);
+  let hint = "";
+  let provider: HintProvider = "gemini";
+  if (snowflakeEnabled && !cortexUnavailable) {
+    try {
+      hint = await fromCortex(text);
+      provider = "cortex";
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (/not available for trial accounts|not available in your region/i.test(message)) cortexUnavailable = true;
+      console.warn("Cortex hint failed, falling back to Gemini:", message);
+    }
+  }
+  if (!hint.trim()) {
+    hint = await generateText(text);
+    provider = "gemini";
+  }
+  hint = hint.trim();
+  if (!hint) throw new HttpError(502, "The model returned an empty hint, please try again");
   // Belt and braces: drop any code block the model emits despite the instructions.
-  return clip(hint.replace(/```[\s\S]*?```/g, "").trim(), MAX_HINT_CHARS);
+  return { hint: clip(hint.replace(/```[\s\S]*?```/g, "").trim(), MAX_HINT_CHARS), provider };
 }

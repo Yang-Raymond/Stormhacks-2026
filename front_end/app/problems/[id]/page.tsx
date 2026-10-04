@@ -106,20 +106,20 @@ export default function ProblemPage() {
   const debugArgs = caseKey === CUSTOM_CASE ? parsedCustom.args : selectedCase?.args;
   const caseLabel = caseKey === CUSTOM_CASE ? "custom input" : (selectedCase?.label ?? "");
 
-  /** Asks Snowflake Cortex for a nudge; uses the given failing case, or the first one from the last run. */
+  /** Asks for an AI nudge (Cortex or Gemini); uses the given failing case, or the first one from the last run. */
   async function requestHint(failing?: TestResult) {
     const fromResult = result?.visibleResults.find((r) => !r.passed) ?? result?.hiddenFailure;
     const target = failing ?? fromResult;
     setTab("result");
     setHint({ status: "loading" });
     try {
-      const { hint: text } = await api<{ hint: string }>(`/problems/${id}/hint`, {
+      const { hint: text, provider } = await api<{ hint: string; provider: "cortex" | "gemini" }>(`/problems/${id}/hint`, {
         body: {
           code,
           failing: target && { args: target.args, expected: target.expected, actual: target.actual, error: target.error },
         },
       });
-      setHint({ status: "done", text });
+      setHint({ status: "done", text, provider });
     } catch (e) {
       setHint({ status: "error", message: (e as Error).message });
     }
@@ -284,7 +284,7 @@ export default function ProblemPage() {
             <ToolbarButton
               onClick={() => void requestHint()}
               disabled={hint?.status === "loading"}
-              title="Get an AI hint about your current code (Snowflake Cortex)"
+              title="Get an AI hint about your current code"
               className="text-zinc-300 hover:bg-surface-2 hover:text-zinc-100"
             >
               <LightbulbIcon className="size-3.5" /> Hint

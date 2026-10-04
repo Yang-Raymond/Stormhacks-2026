@@ -17,10 +17,14 @@ team member can create, and how to show each one to judges.
    enough. Choose the region closest to us (e.g. us-west).
 2. Open the service, then **Connect**, and copy the connection string. It looks like
    `postgres://tsdbadmin:<password>@<host>:<port>/tsdb?sslmode=require`.
-3. Put it in `.env`:
+3. Put it in `.env`, adding `uselibpqcompat=true&` before `sslmode`:
    ```env
-   DATABASE_URL=postgres://tsdbadmin:<password>@<host>:<port>/tsdb?sslmode=require
+   DATABASE_URL=postgres://tsdbadmin:<password>@<host>:<port>/tsdb?uselibpqcompat=true&sslmode=require
    ```
+   Without it, node-pg treats `sslmode=require` as full certificate verification and fails with
+   *"self-signed certificate in certificate chain"*. With it, the connection is still encrypted, the same as
+   `psql` behaves.
+   After changing `DATABASE_URL`, use `docker compose up -d server` (not `restart`) so the container picks it up.
 4. `docker compose up -d server`. On start the server runs every migration against Tiger Cloud, including
    `013_activity_events.sql`, which creates the hypertable, the columnstore (compression) policy and the
    `daily_activity` continuous aggregate. Existing local data isn't copied; it's a fresh database.

@@ -11,7 +11,6 @@ import { generateVerifiedProblem, generationLimiter, insertProblem } from "./gen
 import { generateHint } from "./hints.js";
 import type { Language, Signature } from "./languages.js";
 import { allPassed, evalAtStep, runTests, traceCode, type RunResult, type TestCase } from "./runner.js";
-import { snowflakeEnabled } from "./snowflake.js";
 
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 const codeBody = z.object({ code: z.string().max(20_000) });
@@ -241,13 +240,12 @@ problemsRouter.post("/:id/debug/eval", requireAuth, debugLimiter, async (req, re
   res.json(await evalAtStep(code, p.entry_point, args, { ...at, conditions }));
 });
 
-// AI hint from Snowflake Cortex: a nudge about the student's current code, never the fix.
+// AI hint (Snowflake Cortex, or Gemini when Cortex isn't available): a nudge about the student's code, never the fix.
 problemsRouter.post("/:id/hint", requireAuth, hintLimiter, async (req, res) => {
-  if (!snowflakeEnabled) throw new HttpError(503, "Hints aren't configured on this server");
   const p = await loadProblem(req);
   const { code, failing } = hintBody.parse(req.body);
   const { rows } = await pool.query<{ fixed_code: string }>("SELECT fixed_code FROM problems WHERE id = $1", [p.id]);
-  const hint = await generateHint({
+  const { hint, provider } = await generateHint({
     title: p.title,
     description: p.description,
     language: p.language,
@@ -256,5 +254,5 @@ problemsRouter.post("/:id/hint", requireAuth, hintLimiter, async (req, res) => {
     failing,
   });
   recordEvent(eventOf(req, p, "hint"));
-  res.json({ hint });
+  res.json({ hint, provider });
 });

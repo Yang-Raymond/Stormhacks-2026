@@ -67,5 +67,6 @@ insightsRouter.get("/", async (_req, res) => {
 export const featuresRouter = Router();
 
 featuresRouter.get("/", (_req, res) => {
-  res.json({ hints: snowflakeEnabled, insights: snowflakeEnabled });
+  // Hints always work: Snowflake Cortex when available, otherwise Gemini (hints.ts).
+  res.json({ hints: true, insights: snowflakeEnabled });
 });
