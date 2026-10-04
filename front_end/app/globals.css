@@ -23,6 +23,7 @@
   --color-easy: #4ade80;
   --color-medium: #ea580c;
   --color-hard: #b03e43;
+  --color-amber-300: #b03e43;
 }
 
 :root { color-scheme: dark; }
@@ -77,6 +78,11 @@
 body {
   background: var(--color-canvas);
   color: var(--color-zinc-100);
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--color-accent) 25%, transparent);
+  color: var(--color-accent-ink);
 }
 
 * {

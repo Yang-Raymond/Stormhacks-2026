@@ -99,7 +99,7 @@ export default function DebugToolbar({ dbg }: { dbg: Debugger }) {
         </span>
       </div>
       {dbg.trace?.truncated && (
-        <p className="border-t border-line bg-amber-500/5 px-3 py-1.5 text-xs text-amber-300">
+        <p className="border-t border-line bg-accent/10 px-3 py-1.5 text-xs text-accent-ink">
           Recording stopped after {dbg.steps.length} steps. The code may loop forever, or this input is too large to trace.
         </p>
       )}
@@ -116,7 +116,7 @@ function describeStop(dbg: Debugger): { text: string; className: string } {
     case "entry":
       return { text: "Paused on entry", className: "text-zinc-200" };
     case "finished":
-      if (dbg.trace?.truncated) return { text: "End of recording", className: "text-amber-300" };
+      if (dbg.trace?.truncated) return { text: "End of recording", className: "text-accent-ink" };
       return dbg.trace?.error
         ? { text: `Raised ${dbg.trace.error}`, className: "text-red-400" }
         : { text: `Finished · returned ${dbg.trace?.result ?? "None"}`, className: "text-easy" };
