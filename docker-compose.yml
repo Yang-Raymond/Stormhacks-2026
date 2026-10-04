@@ -1,0 +1,69 @@
+services:
+  db:
+    image: timescale/timescaledb:latest-pg17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: debugcode
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d debugcode"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Executes untrusted user code: no internet, read-only FS, no capabilities, capped resources.
+  runner:
+    build: ./runner
+    networks: [sandbox]
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 64
+    restart: unless-stopped
+
+  server:
+    build: ./server
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:${POSTGRES_PASSWORD}@db:5432/debugcode}
+      RUNNER_URL: http://runner:8000
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks: [default, sandbox]
+    depends_on:
+      db:
+        condition: service_healthy
+      runner:
+        condition: service_started
+
+  front_end:
+    build: ./front_end
+    environment:
+      API_URL: http://server:4000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./front_end:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - server
+
+networks:
+  sandbox:
+    internal: true
+
+volumes:
+  db-data:
