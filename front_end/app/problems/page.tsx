@@ -188,14 +188,9 @@ export default function ProblemsPage() {
                 <SolvedMark solved={p.solved} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-zinc-100 group-hover:text-foreground">{p.title}</p>
-                  <div className="mt-0.5 flex items-center gap-2">
-                    <span className="font-mono text-xs text-zinc-500">
-                      #{p.id} · {relativeTime(p.created_at)}
-                    </span>
-                    <span className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">
-                      {languageInfo(p.language).label}
-                    </span>
-                  </div>
+                  <p className="mt-0.5 font-mono text-xs text-zinc-500">
+                    #{p.id} · {relativeTime(p.created_at)}
+                  </p>
                 </div>
                 <DifficultyBadge difficulty={p.difficulty} />
                 <ChevronRightIcon className="size-4 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-accent-ink" />
