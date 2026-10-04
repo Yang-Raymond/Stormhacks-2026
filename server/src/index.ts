@@ -3,6 +3,7 @@ import express, { type ErrorRequestHandler } from "express";
 import session from "express-session";
 import { z } from "zod";
 import { authRouter } from "./auth.js";
+import { oauthRouter } from "./oauth.js";
 import { config, isProduction } from "./config.js";
 import { pool } from "./db.js";
 import { HttpError } from "./errors.js";
@@ -31,6 +32,7 @@ app.get("/api/health", async (_req, res) => {
   await pool.query("SELECT 1");
   res.json({ ok: true });
 });
+app.use("/api/auth/oauth", oauthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/problems", problemsRouter);
 

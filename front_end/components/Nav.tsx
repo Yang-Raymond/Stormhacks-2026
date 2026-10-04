@@ -16,6 +16,10 @@ export default function Nav() {
       .catch(() => setUser(null));
   }, [pathname]);
 
+  if (pathname === "/login" || pathname === "/register" || pathname === "/signup") {
+    return null;
+  }
+
   async function logout() {
     await api("/auth/logout", { method: "POST" });
     setUser(null);
@@ -24,18 +28,23 @@ export default function Nav() {
 
   return (
     <nav className="flex items-center gap-4 border-b border-zinc-700 px-6 py-3">
-      <Link href="/" className="font-bold">Debug-Code</Link>
+      <Link href="/" className="font-bold flex items-center gap-2">
+        <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-[#f2b544] text-zinc-950 font-mono text-xs font-bold">
+          &gt;_
+        </span>
+        LadyBug
+      </Link>
       <Link href="/problems">Problems</Link>
       <div className="ml-auto flex items-center gap-4">
         {user ? (
           <>
-            <span className="text-zinc-400">{user.email}</span>
-            <button onClick={logout} className="underline">Logout</button>
+            <span className="text-zinc-400">{user.fullName || user.email}</span>
+            <button onClick={logout} className="underline hover:text-zinc-200">Logout</button>
           </>
         ) : (
           <>
-            <Link href="/login">Login</Link>
-            <Link href="/register">Register</Link>
+            <Link href="/login" className="hover:text-zinc-300">Login</Link>
+            <Link href="/register" className="hover:text-zinc-300">Register</Link>
           </>
         )}
       </div>

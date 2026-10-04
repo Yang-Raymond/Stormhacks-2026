@@ -1,4 +1,4 @@
-# Debug-Code
+# LadyBug
 
 A LeetCode-style app where, instead of solving problems, you **fix buggy code**. Gemini generates a Python problem with injected bugs at a chosen difficulty; your fix is graded against hidden test cases in a sandboxed runner.
 
@@ -20,9 +20,22 @@ curl localhost:4000/api/health
 # then open http://localhost:3000
 ```
 
+To enable GitHub and Google OAuth, add to `.env`:
+```env
+PUBLIC_URL=http://localhost:3000
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+```
+
+OAuth callback URLs to configure in GitHub & Google Developer consoles:
+- GitHub: `http://localhost:3000/api/auth/oauth/github/callback`
+- Google: `http://localhost:3000/api/auth/oauth/google/callback`
+
 `server/` is bind-mounted, so edits hot-reload. After changing `server/package.json`, rebuild: `docker compose up --build server`.
 
-Migrations in `server/migrations/*.sql` run automatically on server start (tracked in `schema_migrations`). Add new ones as `002_*.sql`, never edit an applied one.
+Migrations in `server/migrations/*.sql` run automatically on server start (tracked in `schema_migrations`). Add new ones as `003_*.sql`, never edit an applied one.
 
 To use Tiger Data cloud instead of the local db, set `DATABASE_URL` in `.env` (with `?sslmode=require`).
 
@@ -33,10 +46,13 @@ All bodies are JSON. Auth uses an httpOnly session cookie (`sid`).
 | Method | Path | Auth | Body / notes |
 |--------|------|------|--------------|
 | GET  | `/api/health` | | |
-| POST | `/api/auth/register` | | `{email, password}` (password ≥ 8 chars) |
-| POST | `/api/auth/login` | | `{email, password}` |
+| GET  | `/api/auth/providers` | | Returns `{ github: boolean, google: boolean }` |
+| POST | `/api/auth/register` | | `{email, password, fullName?, language?, acceptTerms: true}` |
+| POST | `/api/auth/login` | | `{email, password, remember?: boolean}` |
+| GET  | `/api/auth/oauth/:provider/start` | | Query: `from=login\|register`, `remember`, `language` |
+| GET  | `/api/auth/oauth/:provider/callback` | | OAuth redirect handler with PKCE & state validation |
 | POST | `/api/auth/logout` | | |
-| GET  | `/api/auth/me` | | `{user}` or `{user: null}` |
+| GET  | `/api/auth/me` | | `{user: {id, email, fullName, debugLanguage}}` or `{user: null}` |
 | GET  | `/api/problems` | | list with `solved` flag for the current user |
 | GET  | `/api/problems/:id` | | problem, buggy code, example tests (never the fix or hidden tests) |
 | POST | `/api/problems/generate` | ✓ | `{difficulty: "easy"\|"medium"\|"hard"}` → `{id}`; takes ~10–30s |

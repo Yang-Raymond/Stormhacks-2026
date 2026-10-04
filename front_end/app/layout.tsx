@@ -3,16 +3,16 @@ import Nav from "@/components/Nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Debug-Code",
-  description: "Fix AI-generated buggy code",
+  title: "LadyBug",
+  description: "Debug AI-generated code with confidence",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-full bg-zinc-900 text-zinc-100">
+      <body className="min-h-full bg-zinc-900 text-zinc-100 flex flex-col">
         <Nav />
-        <main className="p-6">{children}</main>
+        <main className="flex-1 flex flex-col">{children}</main>
       </body>
     </html>
   );
