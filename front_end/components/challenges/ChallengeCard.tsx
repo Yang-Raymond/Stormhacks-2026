@@ -62,6 +62,7 @@ export default function ChallengeCard({ kind, slot, loggedIn, defaultLanguage, o
       await onStart(kind, language);
     } catch (e) {
       setError((e as Error).message);
+    } finally {
       setStarting(false);
     }
   }

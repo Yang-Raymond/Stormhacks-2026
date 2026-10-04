@@ -1,15 +1,14 @@
-"""Runs inside the sandboxed subprocess: imports the user's solution and executes each test case."""
+"""Runs inside the sandboxed subprocess: imports the user's solution and calls it once per argument list.
+
+Only arguments are sent here; server.py compares the returned values with the expected ones, so the solution
+can't read or forge them.
+"""
 import json
 import os
 import sys
 import traceback
 
 MAX_REPR = 500
-
-
-def short(value):
-    text = repr(value)
-    return text if len(text) <= MAX_REPR else text[:MAX_REPR] + "..."
 
 
 def main():
@@ -30,14 +29,12 @@ def main():
         return
 
     results = []
-    for test in spec["tests"]:
+    for args in spec["args"]:
         try:
-            actual = func(*test["args"])
             # Round-trip through JSON so tuples/lists compare like the expected JSON value.
-            normalized = json.loads(json.dumps(actual))
-            results.append({"passed": normalized == test["expected"], "actual": short(actual)})
+            results.append({"value": json.loads(json.dumps(func(*args)))})
         except Exception as exc:
-            results.append({"passed": False, "error": f"{type(exc).__name__}: {exc}"[:MAX_REPR]})
+            results.append({"error": f"{type(exc).__name__}: {exc}"[:MAX_REPR]})
     report.write(json.dumps({"results": results}))
 
 

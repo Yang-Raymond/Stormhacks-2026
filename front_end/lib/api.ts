@@ -116,7 +116,27 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T>(
+// Keep draft mutations ordered across autosaves, flushes, resets, Run/Submit and remounts.
+const draftRequests = new Map<string, Promise<unknown>>();
+
+export function api<T>(
+  path: string,
+  options: { method?: string; body?: unknown; keepalive?: boolean } = {},
+): Promise<T> {
+  const problem = /^\/problems\/([^/]+)(?:\/(draft|run|submit))?$/.exec(path);
+  if (!problem) return request<T>(path, options);
+  const key = problem[1];
+  const previous = draftRequests.get(key);
+  const next = previous
+    ? previous.catch(() => {}).then(() => request<T>(path, options))
+    : request<T>(path, options);
+  draftRequests.set(key, next);
+  const cleanup = () => { if (draftRequests.get(key) === next) draftRequests.delete(key); };
+  void next.then(cleanup, cleanup);
+  return next;
+}
+
+async function request<T>(
   path: string,
   options: { method?: string; body?: unknown; keepalive?: boolean } = {},
 ): Promise<T> {

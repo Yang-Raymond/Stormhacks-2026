@@ -133,7 +133,14 @@ export function useDebugger(problemId: string) {
     if (!session || !watches.length) return;
     const id = ++evalSeq.current;
     const timer = setTimeout(() => {
-      evaluate(watches)
+      (async () => {
+        const values: EvalValue[] = [];
+        // The API accepts at most 20 expressions per evaluation.
+        for (let i = 0; i < watches.length; i += 20) {
+          values.push(...await evaluate(watches.slice(i, i + 20)));
+        }
+        return values;
+      })()
         .catch((e: Error) => watches.map(() => ({ error: e.message })))
         .then((values) => {
           if (evalSeq.current === id) setWatchValues(Object.fromEntries(watches.map((w, i) => [w, values[i]])));
