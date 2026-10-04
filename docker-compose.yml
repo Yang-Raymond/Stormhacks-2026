@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: debugcode
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432" # local only; nothing outside this machine should reach the database
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -39,7 +39,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgres://postgres:${POSTGRES_PASSWORD}@db:5432/debugcode}
       RUNNER_URL: http://runner:8000
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000" # local only: public traffic must go through the front end / reverse proxy
     volumes:
       - ./server:/app
       - /app/node_modules

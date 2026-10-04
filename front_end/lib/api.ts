@@ -144,22 +144,6 @@ export type Activity = {
   days: ActivityDay[];
 };
 
-export type Features = { hints: boolean; insights: boolean };
-
-type Rate = { submits: number; accepted: number };
-export type Insights =
-  | { configured: false }
-  | {
-      configured: true;
-      generatedAt: string;
-      model: string;
-      totals: { events: number; users: number; submits: number; accepted: number; hints: number; debugs: number };
-      byLanguage: (Rate & { language: string })[];
-      byDifficulty: (Rate & { difficulty: string })[];
-      hardest: (Rate & { problem_id: number; title: string; difficulty: string; language: string })[];
-      byHour: { hour: number; events: number }[];
-    };
-
 export type ProfileStats = {
   solved: number;
   total: number;

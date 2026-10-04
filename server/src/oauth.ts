@@ -335,8 +335,8 @@ oauthRouter.get("/:provider/callback", async (req, res) => {
       }
     } else {
       // 2. Check if user with verified email exists
-      const userQuery = await client.query<{ id: string }>(
-        "SELECT id FROM users WHERE email = $1",
+      const userQuery = await client.query<{ id: string; has_password: boolean }>(
+        "SELECT id, password_hash IS NOT NULL AS has_password FROM users WHERE email = $1",
         [email],
       );
 
@@ -347,7 +347,15 @@ oauthRouter.get("/:provider/callback", async (req, res) => {
           return void redirectToCallback(res, { error: "email_exists", from: "register" });
         }
 
-        // From login: link to existing account
+        // Registration never verifies the email, so an account with a password may have been created by someone
+        // else using this address. Linking it would hand the provider's (verified) owner an account that stranger
+        // can still log into, so password accounts keep using their password.
+        if (userQuery.rows[0].has_password) {
+          await client.query("ROLLBACK");
+          return void redirectToCallback(res, { error: "email_exists", from: "login" });
+        }
+
+        // From login: link to the existing OAuth-only account
         userId = userQuery.rows[0].id;
         await client.query(
           "INSERT INTO oauth_accounts (provider, provider_user_id, user_id) VALUES ($1, $2, $3)",

@@ -7,13 +7,8 @@ export default function Hero() {
       <div className={`${container} grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-14`}>
         {/* Left Column */}
         <div className="flex flex-col items-start">
-          {/* Eyebrow badge */}
-          <div className="inline-flex items-center rounded-full border border-accent/30 bg-accent/10 px-3.5 py-1 text-xs font-mono font-medium text-accent">
-            debugging practice, one bug at a time
-          </div>
-
           {/* Main Title */}
-          <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-[58px] lg:leading-[1.1]">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-[58px] lg:leading-[1.1]">
             Get better at
             <br />
             finding bugs.
@@ -36,7 +31,7 @@ export default function Hero() {
 
           {/* Tagline below buttons */}
           <p className="mt-6 text-xs text-zinc-500 font-medium">
-            Free · Python, JavaScript, TypeScript, Go
+            Free · Python, JavaScript, TypeScript, Java, C, C++, C#
           </p>
         </div>
 
