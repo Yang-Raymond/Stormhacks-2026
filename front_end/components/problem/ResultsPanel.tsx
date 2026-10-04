@@ -20,7 +20,7 @@ export default function ResultsPanel({ result, pending, params, onDebug }: {
   pending: "run" | "submit" | null;
   params: string[];
   /** Debug a failing case: "case-<index>" for visible tests, "hidden" for the revealed hidden one. */
-  onDebug: (caseKey: string) => void;
+  onDebug?: (caseKey: string) => void;
 }) {
   if (pending) {
     return (
@@ -65,14 +65,14 @@ export default function ResultsPanel({ result, pending, params, onDebug }: {
 
       <ul className="mt-4 space-y-3">
         {result.visibleResults.map((r, i) => (
-          <TestCard key={i} title={`Case ${i + 1}`} result={r} params={params} onDebug={() => onDebug(`case-${i}`)} />
+          <TestCard key={i} title={`Case ${i + 1}`} result={r} params={params} onDebug={onDebug && (() => onDebug(`case-${i}`))} />
         ))}
         {result.hiddenFailure && (
           <TestCard
             title={`Hidden test #${result.hiddenFailure.testNumber}`}
             result={result.hiddenFailure}
             params={params}
-            onDebug={() => onDebug("hidden")}
+            onDebug={onDebug && (() => onDebug("hidden"))}
           />
         )}
       </ul>
@@ -89,7 +89,7 @@ function TestCard({ title, result: r, params, onDebug }: {
   title: string;
   result: TestResult;
   params: string[];
-  onDebug: () => void;
+  onDebug?: () => void;
 }) {
   const input = r.args.map((a, i) => `${params[i] ?? `arg${i + 1}`} = ${show(a)}`).join("\n");
   return (
@@ -103,7 +103,7 @@ function TestCard({ title, result: r, params, onDebug }: {
           {r.passed ? <CheckIcon className="size-3" /> : <XIcon className="size-3" />}
         </span>
         <span className="text-sm font-medium text-zinc-200">{title}</span>
-        {!r.passed && (
+        {!r.passed && onDebug && (
           <button
             type="button"
             onClick={onDebug}

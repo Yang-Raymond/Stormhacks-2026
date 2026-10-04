@@ -2,13 +2,13 @@ import { Router, type Request } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
 import { requireAuth } from "./auth.js";
+import { type ChallengeKind, periodEndsAt } from "./challenges.js";
 import { pool } from "./db.js";
 import { HttpError } from "./errors.js";
-import { difficulties, generateProblem, type GeneratedProblem } from "./gemini.js";
+import { difficulties } from "./gemini.js";
+import { generateVerifiedProblem, generationLimiter, insertProblem } from "./generation.js";
+import type { Language, Signature } from "./languages.js";
 import { allPassed, evalAtStep, runTests, traceCode, type RunResult, type TestCase } from "./runner.js";
-
-const VISIBLE_TESTS = 2;
-const GENERATION_ATTEMPTS = 3;
 
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 const codeBody = z.object({ code: z.string().max(20_000) });
@@ -33,17 +33,45 @@ type ProblemRow = {
   buggy_code: string;
   tests: TestCase[];
   visible_test_count: number;
+  language: Language;
+  signature: Signature | null;
+  solved: boolean;
+  challenge_owner: string | null;
+  challenge_kind: ChallengeKind | null;
+  challenge_period: string | null;
 };
 
-async function loadProblem(rawId: unknown): Promise<ProblemRow> {
-  const { id } = idParam.parse({ id: rawId });
+type LoadedProblem = ProblemRow & { challenge: { kind: ChallengeKind; endsAt: string } | null };
+
+/**
+ * Loads a problem as seen by the current user. Challenge problems are personal: only their owner can see them,
+ * and once the period ends without a passing submission they're gone (410 until the cleanup deletes them).
+ */
+async function loadProblem(req: Request): Promise<LoadedProblem> {
+  const { id } = idParam.parse({ id: req.params.id });
+  const userId = req.session.userId ?? null;
   const { rows } = await pool.query<ProblemRow>(
-    `SELECT id, title, description, difficulty, entry_point, buggy_code, tests, visible_test_count
-     FROM problems WHERE id = $1`,
-    [id],
+    `SELECT p.id, p.title, p.description, p.difficulty, p.entry_point, p.buggy_code, p.tests, p.visible_test_count,
+            p.language, p.signature,
+            EXISTS (SELECT 1 FROM submissions s WHERE s.problem_id = p.id AND s.user_id = $2 AND s.passed) AS solved,
+            c.user_id AS challenge_owner, c.kind AS challenge_kind,
+            to_char(c.period_start, 'YYYY-MM-DD') AS challenge_period
+     FROM problems p LEFT JOIN challenges c ON c.problem_id = p.id
+     WHERE p.id = $1`,
+    [id, userId],
   );
-  if (!rows[0]) throw new HttpError(404, "Problem not found");
-  return rows[0];
+  const row = rows[0];
+  if (!row || (row.challenge_owner && row.challenge_owner !== userId)) throw new HttpError(404, "Problem not found");
+  if (!row.challenge_kind || !row.challenge_period) return { ...row, challenge: null };
+  const endsAt = periodEndsAt(row.challenge_kind, row.challenge_period);
+  if (endsAt.getTime() <= Date.now() && !row.solved) {
+    throw new HttpError(410, `This ${row.challenge_kind} challenge has expired. Start a new one from the problems page.`);
+  }
+  return { ...row, challenge: { kind: row.challenge_kind, endsAt: endsAt.toISOString() } };
+}
+
+function requirePython(p: LoadedProblem) {
+  if (p.language !== "python") throw new HttpError(400, "The debugger currently supports Python only");
 }
 
 /**
@@ -79,87 +107,51 @@ function saveDraft(userId: string, problemId: string, code: string) {
 }
 
 async function gradeProblem(req: Request) {
-  const p = await loadProblem(req.params.id);
+  const p = await loadProblem(req);
   const { code } = codeBody.parse(req.body);
   // Whatever was run or submitted is the user's latest work, even if an autosave never landed.
-  const [run] = await Promise.all([runTests(code, p.entry_point, p.tests), saveDraft(req.session.userId!, p.id, code)]);
-  return { p, code, result: publicResults(run, p) };
-}
-
-/** A generated problem is only usable if the reference solution passes every test and the buggy one doesn't. */
-async function isValidExercise(p: GeneratedProblem) {
-  const [fixed, buggy] = await Promise.all([
-    runTests(p.fixedCode, p.entryPoint, p.tests),
-    runTests(p.buggyCode, p.entryPoint, p.tests),
+  const [run] = await Promise.all([
+    runTests(code, p.entry_point, p.tests, p.language, p.signature),
+    saveDraft(req.session.userId!, p.id, code),
   ]);
-  return allPassed(fixed, p.tests.length) && !allPassed(buggy, p.tests.length);
+  return { p, code, result: publicResults(run, p) };
 }
 
 export const problemsRouter = Router();
 
 problemsRouter.get("/", async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT p.id, p.title, p.difficulty, p.created_at,
+    `SELECT p.id, p.title, p.difficulty, p.language, p.created_at,
             EXISTS (SELECT 1 FROM submissions s
                     WHERE s.problem_id = p.id AND s.user_id = $1 AND s.passed) AS solved
-     FROM problems p ORDER BY p.created_at DESC`,
+     FROM problems p
+     WHERE NOT p.is_challenge -- challenges are personal
+     ORDER BY p.created_at DESC`,
     [req.session.userId ?? null],
   );
   res.json({ problems: rows });
 });
 
-problemsRouter.post(
-  "/generate",
-  requireAuth,
-  rateLimit({ windowMs: 60 * 60_000, limit: 20, keyGenerator: (req) => req.session.userId! }),
-  async (req, res) => {
-    const { difficulty } = z.object({ difficulty: z.enum(difficulties) }).parse(req.body);
-
-    for (let attempt = 1; attempt <= GENERATION_ATTEMPTS; attempt++) {
-      let problem: GeneratedProblem;
-      try {
-        problem = await generateProblem(difficulty);
-      } catch (err) {
-        console.warn(`generation attempt ${attempt} returned unusable output`, err);
-        continue;
-      }
-      if (!(await isValidExercise(problem))) {
-        console.warn(`generation attempt ${attempt} failed verification`);
-        continue;
-      }
-      const { rows } = await pool.query<{ id: string }>(
-        `INSERT INTO problems (title, description, difficulty, entry_point, buggy_code, fixed_code, tests,
-                               visible_test_count, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-        [
-          problem.title,
-          problem.description,
-          difficulty,
-          problem.entryPoint,
-          problem.buggyCode,
-          problem.fixedCode,
-          JSON.stringify(problem.tests),
-          VISIBLE_TESTS,
-          req.session.userId,
-        ],
-      );
-      return void res.status(201).json({ id: rows[0].id });
-    }
-    throw new HttpError(502, "Could not generate a valid problem, please try again");
-  },
-);
+// Practice problems stay Python; challenges choose their language (see challenges.ts).
+problemsRouter.post("/generate", requireAuth, generationLimiter, async (req, res) => {
+  const { difficulty } = z.object({ difficulty: z.enum(difficulties) }).parse(req.body);
+  const problem = await generateVerifiedProblem(difficulty, "python");
+  res.status(201).json({ id: await insertProblem(pool, problem, difficulty, req.session.userId!) });
+});
 
 problemsRouter.get("/:id", async (req, res) => {
-  const p = await loadProblem(req.params.id);
-  const { rows } = await pool.query<{ solved: boolean; saved_code: string | null }>(
-    `SELECT EXISTS (SELECT 1 FROM submissions WHERE problem_id = $1 AND user_id = $2 AND passed) AS solved,
-            (SELECT code FROM drafts WHERE problem_id = $1 AND user_id = $2) AS saved_code`,
+  const p = await loadProblem(req);
+  const { rows } = await pool.query<{ saved_code: string }>(
+    "SELECT code AS saved_code FROM drafts WHERE problem_id = $1 AND user_id = $2",
     [p.id, req.session.userId ?? null],
   );
   res.json({
     problem: {
-      solved: rows[0].solved,
-      savedCode: rows[0].saved_code,
+      solved: p.solved,
+      savedCode: rows[0]?.saved_code ?? null,
+      language: p.language,
+      signature: p.signature,
+      challenge: p.challenge,
       id: p.id,
       title: p.title,
       description: p.description,
@@ -173,7 +165,7 @@ problemsRouter.get("/:id", async (req, res) => {
 });
 
 problemsRouter.put("/:id/draft", requireAuth, async (req, res) => {
-  const p = await loadProblem(req.params.id);
+  const p = await loadProblem(req);
   const { code } = codeBody.parse(req.body);
   await saveDraft(req.session.userId!, p.id, code);
   res.status(204).end();
@@ -195,9 +187,9 @@ problemsRouter.post("/:id/run", requireAuth, async (req, res) => {
 problemsRouter.post("/:id/submit", requireAuth, async (req, res) => {
   const { p, code, result } = await gradeProblem(req);
   await pool.query(
-    `INSERT INTO submissions (user_id, problem_id, code, passed, passed_count, total_count)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
-    [req.session.userId, p.id, code, result.passed, result.passedCount, result.totalCount],
+    `INSERT INTO submissions (user_id, problem_id, code, passed, passed_count, total_count, language)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [req.session.userId, p.id, code, result.passed, result.passedCount, result.totalCount, p.language],
   );
   res.json(result);
 });
@@ -205,13 +197,15 @@ problemsRouter.post("/:id/submit", requireAuth, async (req, res) => {
 // Debug args come from the client (an example, the revealed hidden failure, or custom input),
 // so these endpoints never expose hidden test data.
 problemsRouter.post("/:id/debug", requireAuth, debugLimiter, async (req, res) => {
-  const p = await loadProblem(req.params.id);
+  const p = await loadProblem(req);
+  requirePython(p);
   const { code, args, conditions } = debugBody.parse(req.body);
   res.json(await traceCode(code, p.entry_point, args, conditions));
 });
 
 problemsRouter.post("/:id/debug/eval", requireAuth, debugLimiter, async (req, res) => {
-  const p = await loadProblem(req.params.id);
+  const p = await loadProblem(req);
+  requirePython(p);
   const { code, args, conditions, ...at } = evalBody.parse(req.body);
   res.json(await evalAtStep(code, p.entry_point, args, { ...at, conditions }));
 });

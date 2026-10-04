@@ -1,7 +1,10 @@
+"use client";
+
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import DifficultyBadge from "@/components/ui/DifficultyBadge";
-import { CheckIcon } from "@/components/ui/icons";
+import { CalendarIcon, CheckIcon, ClockIcon, TrophyIcon } from "@/components/ui/icons";
+import { formatRemaining, useNow } from "@/hooks/useNow";
 import type { Problem } from "@/lib/api";
 
 const prose = [
@@ -23,6 +26,7 @@ const withoutLeadingTitle = (markdown: string) => markdown.replace(/^\s*#\s+[^\n
 export default function ProblemDescription({ problem }: { problem: Problem }) {
   return (
     <article className="px-5 py-5 sm:px-6">
+      {problem.challenge && <ChallengeBanner challenge={problem.challenge} solved={problem.solved} />}
       <h1 className="text-xl font-bold tracking-tight text-white">{problem.title}</h1>
       <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
         <DifficultyBadge difficulty={problem.difficulty} />
@@ -39,5 +43,34 @@ export default function ProblemDescription({ problem }: { problem: Problem }) {
         <Markdown remarkPlugins={[remarkGfm]}>{withoutLeadingTitle(problem.description)}</Markdown>
       </div>
     </article>
+  );
+}
+
+function ChallengeBanner({ challenge, solved }: { challenge: NonNullable<Problem["challenge"]>; solved: boolean }) {
+  const now = useNow();
+  const remaining = Date.parse(challenge.endsAt) - now;
+  const weekly = challenge.kind === "weekly";
+  const Icon = weekly ? TrophyIcon : CalendarIcon;
+  return (
+    <div
+      className={`mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3 py-2 text-xs ${
+        weekly ? "border-violet-400/25 bg-violet-500/5" : "border-accent/25 bg-accent/5"
+      }`}
+    >
+      <span className={`flex items-center gap-1.5 font-semibold ${weekly ? "text-violet-300" : "text-accent"}`}>
+        <Icon className="size-3.5" />
+        {weekly ? "Weekly challenge" : "Daily challenge"}
+      </span>
+      {solved ? (
+        <span className="text-easy">Solved · kept in your history</span>
+      ) : remaining > 0 ? (
+        <span className="flex items-center gap-1 text-zinc-400">
+          <ClockIcon className="size-3" />
+          {formatRemaining(remaining)} left · unsolved progress is lost at reset
+        </span>
+      ) : (
+        <span className="text-red-400">This challenge has ended</span>
+      )}
+    </div>
   );
 }

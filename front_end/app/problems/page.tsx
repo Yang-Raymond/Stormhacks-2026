@@ -3,18 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import ChallengesSection from "@/components/challenges/ChallengesSection";
 import DifficultyBadge from "@/components/ui/DifficultyBadge";
+import GenerationProgress from "@/components/ui/GenerationProgress";
 import { CheckIcon, ChevronRightIcon, SearchIcon, SparklesIcon } from "@/components/ui/icons";
 import { api, type Difficulty, type ProblemSummary } from "@/lib/api";
 
 const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard"];
 const STATUSES = ["all", "unsolved", "solved"] as const;
 type Status = (typeof STATUSES)[number];
-
-/** Generation is one ~30s request; these stages just give a sense of progress while it runs. */
-const GENERATION_STAGES = ["Writing the problem", "Injecting bugs", "Verifying the test suite", "Almost there"];
-const SECONDS_PER_STAGE = 8;
-const EXPECTED_SECONDS = 30;
 
 const difficultyText: Record<Difficulty, string> = { easy: "text-easy", medium: "text-medium", hard: "text-hard" };
 const difficultyBar: Record<Difficulty, string> = { easy: "bg-easy", medium: "bg-medium", hard: "bg-hard" };
@@ -92,7 +89,14 @@ export default function ProblemsPage() {
         </p>
       </header>
 
-      <section aria-label="Progress" className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <ChallengesSection />
+
+      <div className="mt-12 flex flex-wrap items-baseline justify-between gap-2 border-t border-line pt-8">
+        <h2 className="text-lg font-semibold text-white">Practice</h2>
+        <p className="text-xs text-zinc-500">Python problems you can come back to any time.</p>
+      </div>
+
+      <section aria-label="Practice progress" className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="Solved" solved={solvedCount} total={list.length} barClass="bg-accent" valueClass="text-white" />
         {DIFFICULTIES.map((d) => {
           const ofDifficulty = list.filter((p) => p.difficulty === d);
@@ -234,21 +238,6 @@ function GenerateCard({ difficulty, onDifficulty, generating, onGenerate }: {
   generating: boolean;
   onGenerate: () => void;
 }) {
-  const [elapsed, setElapsed] = useState(0);
-
-  useEffect(() => {
-    if (!generating) return;
-    const started = Date.now();
-    const timer = setInterval(() => setElapsed((Date.now() - started) / 1000), 250);
-    return () => {
-      clearInterval(timer);
-      setElapsed(0);
-    };
-  }, [generating]);
-
-  const stage = Math.min(Math.floor(elapsed / SECONDS_PER_STAGE), GENERATION_STAGES.length - 1);
-  const progress = Math.min(95, (elapsed / EXPECTED_SECONDS) * 100);
-
   return (
     <section className="relative mt-6 overflow-hidden rounded-xl border border-line bg-surface">
       <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-accent/10 blur-3xl" />
@@ -256,7 +245,7 @@ function GenerateCard({ difficulty, onDifficulty, generating, onGenerate }: {
         <div className="flex-1">
           <h2 className="flex items-center gap-2 font-semibold text-white">
             <SparklesIcon className="size-4 text-accent" />
-            Generate a new problem
+            Generate a practice problem
           </h2>
           <p className="mt-1 text-sm text-zinc-400">
             A fresh algorithm problem, a buggy solution to fix, and a hidden test suite to prove it.
@@ -289,30 +278,7 @@ function GenerateCard({ difficulty, onDifficulty, generating, onGenerate }: {
         </div>
       </div>
 
-      {generating && (
-        <div className="relative border-t border-line px-5 py-4 sm:px-6" aria-live="polite">
-          <div className="h-1 overflow-hidden rounded-full bg-line">
-            <div className="h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${progress}%` }} />
-          </div>
-          <ol className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            {GENERATION_STAGES.map((label, i) => (
-              <li
-                key={label}
-                className={`flex items-center gap-2 ${i < stage ? "text-zinc-400" : i === stage ? "text-zinc-100" : "text-zinc-600"}`}
-              >
-                {i < stage ? (
-                  <CheckIcon className="size-3.5 text-easy" />
-                ) : i === stage ? (
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />
-                ) : (
-                  <span className="h-2 w-2 rounded-full bg-line-strong" />
-                )}
-                {label}
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
+      {generating && <GenerationProgress className="relative border-t border-line px-5 py-4 sm:px-6" />}
     </section>
   );
 }

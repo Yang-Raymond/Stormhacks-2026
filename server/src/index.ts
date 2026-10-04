@@ -3,6 +3,7 @@ import express, { type ErrorRequestHandler } from "express";
 import session from "express-session";
 import { z } from "zod";
 import { authRouter } from "./auth.js";
+import { challengesRouter } from "./challenges.js";
 import { oauthRouter } from "./oauth.js";
 import { config, isProduction } from "./config.js";
 import { pool } from "./db.js";
@@ -35,6 +36,7 @@ app.get("/api/health", async (_req, res) => {
 app.use("/api/auth/oauth", oauthRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/problems", problemsRouter);
+app.use("/api/challenges", challengesRouter);
 
 app.use((_req, _res, next) => next(new HttpError(404, "Not found")));
 

@@ -1,5 +1,6 @@
 import { config } from "./config.js";
 import { HttpError } from "./errors.js";
+import type { Language, Signature } from "./languages.js";
 
 export type TestCase = { args: unknown[]; expected: unknown };
 export type TestResult = { passed: boolean; actual?: string; error?: string };
@@ -55,9 +56,18 @@ async function callRunner<T>(path: string, body: unknown): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** Executes Python code against test cases in the sandboxed runner service. */
-export function runTests(code: string, entryPoint: string, tests: TestCase[]): Promise<RunResult> {
-  return callRunner("/run", { code, entry_point: entryPoint, tests });
+/**
+ * Executes code against test cases in the sandboxed runner service. Statically typed languages need the
+ * signature so the runner can turn JSON arguments into native values.
+ */
+export function runTests(
+  code: string,
+  entryPoint: string,
+  tests: TestCase[],
+  language: Language = "python",
+  signature?: Signature | null,
+): Promise<RunResult> {
+  return callRunner("/run", { code, entry_point: entryPoint, tests, language, signature: signature ?? undefined });
 }
 
 /** Records every executed line of one call so the client can step through it like a debugger. */

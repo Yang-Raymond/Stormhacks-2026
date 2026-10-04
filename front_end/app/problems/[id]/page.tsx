@@ -27,6 +27,7 @@ import { type SaveStatus, useDraft } from "@/hooks/useDraft";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { api, type Problem, type RunResult } from "@/lib/api";
 import { inlineValues } from "@/lib/debugger";
+import { DEBUGGABLE, languageInfo } from "@/lib/languages";
 import { paramNames } from "@/lib/python";
 
 type BottomTab = "testcase" | "result" | "debug";
@@ -73,7 +74,11 @@ export default function ProblemPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const params = useMemo(() => (problem ? paramNames(problem.buggyCode, problem.entryPoint) : []), [problem]);
+  const params = useMemo(
+    () => (problem ? (problem.signature?.params.map((p) => p.name) ?? paramNames(problem.buggyCode, problem.entryPoint)) : []),
+    [problem],
+  );
+  const canDebug = problem ? DEBUGGABLE.has(problem.language) : false;
   const lines = useMemo(() => code.split("\n"), [code]);
   const lineText = (line: number) => lines[line - 1] ?? "";
 
@@ -122,7 +127,7 @@ export default function ProblemPage() {
   }
 
   async function startDebug(key = caseKey) {
-    if (!problem) return;
+    if (!problem || !canDebug) return;
     const args = key === CUSTOM_CASE ? parsedCustom.args : (cases.find((c) => c.key === key) ?? cases[0])?.args;
     if (!args) {
       setTab("testcase");
@@ -148,7 +153,7 @@ export default function ProblemPage() {
             F11: c.stepInto,
             "Shift+F11": c.stepOut,
           }
-        : { F5: () => void startDebug() };
+        : { F5: canDebug ? () => void startDebug() : undefined };
       const action = actions[key];
       if (!action) return;
       e.preventDefault();
@@ -179,6 +184,7 @@ export default function ProblemPage() {
   }
 
   const frame = dbg.step?.frames[dbg.frameIndex];
+  const language = languageInfo(problem.language);
 
   const descriptionCard = (
     <Card>
@@ -196,7 +202,7 @@ export default function ProblemPage() {
       <div className="flex h-10 shrink-0 items-center gap-2 border-b border-line bg-[#111317] px-2">
         <span className="flex items-center gap-2 px-2 text-xs font-medium text-zinc-300">
           Code
-          <span className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">Python 3</span>
+          <span className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">{language.label}</span>
         </span>
         {!dbg.active && <SaveIndicator status={draft.status} />}
         {dbg.active && (
@@ -223,8 +229,8 @@ export default function ProblemPage() {
           ) : (
             <ToolbarButton
               onClick={() => void startDebug()}
-              disabled={dbg.starting || !debugArgs}
-              title={`Debug ${caseLabel} (F5)`}
+              disabled={dbg.starting || !debugArgs || !canDebug}
+              title={canDebug ? `Debug ${caseLabel} (F5)` : "The debugger supports Python for now"}
               className="border border-accent/40 text-accent hover:bg-accent/10"
             >
               <BugIcon className="size-3.5" /> {dbg.starting ? "Recording…" : "Debug"}
@@ -251,6 +257,7 @@ export default function ProblemPage() {
       {dbg.active && <DebugToolbar dbg={dbg} />}
       <div className="min-h-0 flex-1">
         <CodeEditor
+          language={language.monaco}
           value={code}
           onChange={setCode}
           readOnly={dbg.active}
@@ -302,10 +309,25 @@ export default function ProblemPage() {
           />
         )}
         {tab === "result" && (
-          <ResultsPanel result={result} pending={pending} params={params} onDebug={(key) => void startDebug(key)} />
+          <ResultsPanel
+            result={result}
+            pending={pending}
+            params={params}
+            onDebug={canDebug ? (key) => void startDebug(key) : undefined}
+          />
         )}
         {tab === "debug" && (
-          <DebugPanel dbg={dbg} lineText={lineText} caseLabel={caseLabel} onStart={() => void startDebug()} />
+          canDebug ? (
+            <DebugPanel dbg={dbg} lineText={lineText} caseLabel={caseLabel} onStart={() => void startDebug()} />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+              <BugIcon className="size-6 text-zinc-600" />
+              <p className="mt-3 text-sm text-zinc-300">The time-travel debugger supports Python for now.</p>
+              <p className="mt-1 text-xs text-zinc-500">
+                This problem is in {language.label}. Use Run to check your fix against every test.
+              </p>
+            </div>
+          )
         )}
       </div>
     </Card>

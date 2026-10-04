@@ -16,8 +16,17 @@ export type MeResponse = {
 };
 
 export type Difficulty = "easy" | "medium" | "hard";
-export type ProblemSummary = { id: string; title: string; difficulty: Difficulty; solved: boolean; created_at: string };
+export type ProblemSummary = {
+  id: string;
+  title: string;
+  difficulty: Difficulty;
+  language: string;
+  solved: boolean;
+  created_at: string;
+};
 export type TestCase = { args: unknown[]; expected: unknown };
+export type Signature = { params: { name: string; type: string }[]; returns: string };
+export type ChallengeKind = "daily" | "weekly";
 export type Problem = {
   id: string;
   title: string;
@@ -30,7 +39,30 @@ export type Problem = {
   solved: boolean;
   /** The user's saved work on this problem, if any. */
   savedCode: string | null;
+  language: string;
+  /** Typed parameters/return, present on problems generated with language support. */
+  signature: Signature | null;
+  challenge: { kind: ChallengeKind; endsAt: string } | null;
 };
+
+export type ChallengeSummary = {
+  kind: ChallengeKind;
+  periodStart: string;
+  problemId: string;
+  title: string;
+  difficulty: Difficulty;
+  language: string;
+  solved: boolean;
+};
+export type ChallengeSlot = {
+  kind: ChallengeKind;
+  periodStart: string;
+  endsAt: string;
+  /** A generation for this slot is already running on the server. */
+  starting: boolean;
+  challenge: ChallengeSummary | null;
+};
+export type ChallengesResponse = { daily: ChallengeSlot; weekly: ChallengeSlot; history: ChallengeSummary[] };
 
 export type TraceFrame = { name: string; line: number; locals: Record<string, string> };
 export type TraceStep = {

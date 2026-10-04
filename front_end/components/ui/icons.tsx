@@ -114,3 +114,15 @@ export const MessageSquareIcon = (p: IconProps) => (
   <Icon {...p}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" /></Icon>
 );
 
+export const ClockIcon = (p: IconProps) => (
+  <Icon {...p}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></Icon>
+);
+export const LockIcon = (p: IconProps) => (
+  <Icon {...p}><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></Icon>
+);
+export const TrophyIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0Z" />
+    <path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3" />
+  </Icon>
+);

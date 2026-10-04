@@ -18,6 +18,8 @@ type Position = NonNullable<ReturnType<StandaloneEditor["getPosition"]>>;
 
 export type CodeEditorProps = {
   value: string;
+  /** Monaco language id. */
+  language?: string;
   onChange: (v: string) => void;
   readOnly?: boolean;
   breakpoints?: Breakpoints;
@@ -212,7 +214,7 @@ export default function CodeEditor(props: CodeEditorProps) {
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => latest.current.commands?.submit?.());
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Quote, () => latest.current.commands?.run?.());
 
-    const hover = monaco.languages.registerHoverProvider("python", {
+    const hover = monaco.languages.registerHoverProvider(latest.current.language ?? "python", {
       provideHover(model: TextModel, position: Position) {
         const values = latest.current.hoverValues;
         const word = model === editor.getModel() ? model.getWordAtPosition(position) : null;
@@ -231,7 +233,7 @@ export default function CodeEditor(props: CodeEditorProps) {
     <div className="relative h-full">
       <MonacoEditor
         height="100%"
-        language="python"
+        language={props.language ?? "python"}
         theme="ladybug"
         value={value}
         beforeMount={defineTheme}

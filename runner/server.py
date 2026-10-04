@@ -1,4 +1,4 @@
-"""Minimal HTTP service that executes untrusted Python against test cases.
+"""Minimal HTTP service that executes untrusted code against test cases.
 
 Isolation here is defence in depth only (rlimits, timeout, empty env, temp dir).
 Real isolation comes from the container: no network, read-only FS, non-root, cgroup limits.
@@ -10,7 +10,10 @@ import signal
 import subprocess
 import sys
 import tempfile
+import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+import languages
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HARNESS = os.path.join(HERE, "harness.py")
@@ -67,7 +70,11 @@ def spawn(script, payload, max_output):
         return None, {"status": "error", "error": stderr[-2000:] or f"process exited with code {proc.returncode}"}
 
 
-def run(code, entry_point, tests):
+def run(payload):
+    language = payload.get("language", "python")
+    code, entry_point, tests = payload["code"], payload["entry_point"], payload["tests"]
+    if language != "python":
+        return languages.run_tests(languages.BUILDERS[language], code, entry_point, payload.get("signature"), tests)
     report, failure = spawn(HARNESS, {"code": code, "entry_point": entry_point, "tests": tests}, MAX_OUTPUT_BYTES)
     if failure:
         return {**failure, "results": []}
@@ -94,6 +101,18 @@ def valid(payload):
         and isinstance(payload.get("tests"), list)
         and len(payload["tests"]) <= MAX_TESTS
         and all(isinstance(t, dict) and isinstance(t.get("args"), list) and "expected" in t for t in payload["tests"])
+        and payload.get("language", "python") in languages.LANGUAGES
+        and (payload.get("language") not in languages.NEEDS_SIGNATURE or valid_signature(payload.get("signature")))
+    )
+
+
+def valid_signature(signature):
+    return (
+        isinstance(signature, dict)
+        and isinstance(signature.get("params"), list)
+        and len(signature["params"]) <= 20
+        and all(isinstance(p, dict) and p.get("type") in languages.TYPES for p in signature["params"])
+        and signature.get("returns") in languages.TYPES
     )
 
 
@@ -148,7 +167,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send(404, {"error": "not found"})
 
     def do_POST(self):
-        routes = {"/run": (valid, lambda p: run(p["code"], p["entry_point"], p["tests"])), "/trace": (valid_trace, trace)}
+        routes = {"/run": (valid, run), "/trace": (valid_trace, trace)}
         if self.path not in routes:
             return self._send(404, {"error": "not found"})
         validator, handler = routes[self.path]
@@ -161,7 +180,12 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(400, {"error": "invalid json"})
         if not validator(payload):
             return self._send(400, {"error": f"invalid payload for {self.path}"})
-        self._send(200, handler(payload))
+        try:
+            result = handler(payload)
+        except Exception:
+            traceback.print_exc()
+            return self._send(500, {"error": "the runner failed to execute this request"})
+        self._send(200, result)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8000"))
